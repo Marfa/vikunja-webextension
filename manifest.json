@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Vikunja",
-  "version": "0.1.0",
-  "description": "Quickly add tasks to Vikunja from your browser toolbar.",
+  "version": "0.2.0",
+  "description": "Manage Vikunja tasks from your browser toolbar, with a task list, quick add and capture of the current page.",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -18,19 +18,40 @@
     },
     "default_popup": "popup/popup.html"
   },
+  "background": {
+    "service_worker": "background/background.js",
+    "scripts": ["lib/vikunja.js", "background/background.js"]
+  },
   "options_ui": {
     "page": "options/options.html",
     "open_in_tab": true
   },
-  "permissions": ["storage"],
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+Shift+K",
+        "mac": "Command+Shift+K"
+      },
+      "description": "Open the Vikunja popup"
+    },
+    "add-current-site": {
+      "suggested_key": {
+        "default": "Alt+Shift+V",
+        "mac": "Command+Shift+V"
+      },
+      "description": "Add the current website as a task"
+    }
+  },
+  "permissions": ["storage", "activeTab", "contextMenus"],
   "host_permissions": ["<all_urls>"],
+  "minimum_chrome_version": "121",
   "browser_specific_settings": {
     "gecko": {
       "id": "vikunja@hess.ooo",
       "data_collection_permissions": {
         "required": ["none"]
       },
-      "strict_min_version": "109.0"
+      "strict_min_version": "121.0"
     }
   }
 }

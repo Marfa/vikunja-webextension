@@ -1,23 +1,5 @@
-:root {
-  --blue: #196aff;
-  --blue-dark: #0f4bd8;
-  --ink: #20242a;
-  --muted: #6b7280;
-  --border: #d7dbe1;
-  --bg: #ffffff;
-  --ok: #178a47;
-  --err: #c0392b;
-}
-
-* {
-  box-sizing: border-box;
-}
-
 body {
-  margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background: #f4f5f7;
-  color: var(--ink);
   line-height: 1.5;
 }
 
@@ -53,32 +35,73 @@ body {
   font-size: 0.9rem;
 }
 
+h2 {
+  margin: 1.75rem 0 0;
+  font-size: 1rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.25rem;
+}
+
+h2:first-of-type {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
+
 label {
   display: block;
   font-weight: 600;
   margin: 1rem 0 0.35rem;
 }
 
-input[type="url"],
-input[type="password"] {
-  width: 100%;
-  padding: 0.6rem 0.75rem;
-  font-size: 0.95rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fff;
+label.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
 }
 
-input:focus {
-  outline: 2px solid var(--blue);
-  outline-offset: 1px;
-  border-color: var(--blue);
+label.checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+input[type="url"],
+input[type="password"],
+input[type="text"],
+select {
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
 }
 
 .hint {
   margin: 0.3rem 0 0;
   font-size: 0.8rem;
   color: var(--muted);
+}
+
+.hint a {
+  color: var(--blue);
+}
+
+ul.permissions {
+  margin: 0.3rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+ul.permissions li {
+  margin: 0.15rem 0;
+}
+
+ul.permissions code,
+.hint code {
+  font-size: 0.75rem;
+  background: #eef0f3;
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
 }
 
 .actions {
@@ -90,10 +113,6 @@ input:focus {
 button {
   padding: 0.6rem 1.25rem;
   font-size: 0.95rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
 }
 
 button#save {
@@ -103,20 +122,6 @@ button#save {
 
 button#save:hover {
   background: var(--blue-dark);
-}
-
-button.secondary {
-  background: #eef0f3;
-  color: var(--ink);
-}
-
-button.secondary:hover {
-  background: #e2e5ea;
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: default;
 }
 
 .status {

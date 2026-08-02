@@ -1,14 +1,20 @@
 (() => {
   'use strict';
 
-  const { api, normalizeBaseUrl, getConfig, request } = window.VikunjaLib;
+  const { api, normalizeBaseUrl, getConfig, getPrefs, request, listProjects } = window.VikunjaLib;
+  const { fillProjectSelect: uiFillProjectSelect } = window.UiLib;
 
   const form = document.getElementById('settings-form');
   const urlInput = document.getElementById('base-url');
   const tokenInput = document.getElementById('token');
+  const defaultProjectSelect = document.getElementById('default-project');
+  const dueTodayInput = document.getElementById('due-today');
+  const customFilterInput = document.getElementById('custom-filter');
   const saveBtn = document.getElementById('save');
   const testBtn = document.getElementById('test');
   const statusEl = document.getElementById('status');
+
+  let projects = [];
 
   function showStatus(message, kind) {
     statusEl.textContent = message;
@@ -24,26 +30,48 @@
     return {
       baseUrl: normalizeBaseUrl(urlInput.value),
       token: tokenInput.value.trim(),
+      defaultProjectId: defaultProjectSelect.value || null,
+      dueToday: dueTodayInput.checked,
+      customFilter: customFilterInput.value.trim(),
     };
   }
 
   function validate() {
-    const { baseUrl, token } = formConfig();
-    if (!baseUrl || !/^https?:\/\/[^/]+/.test(baseUrl)) {
+    const config = formConfig();
+    if (!config.baseUrl || !/^https?:\/\/[^/]+/.test(config.baseUrl)) {
       showStatus('Please enter a valid Vikunja URL (e.g. https://try.vikunja.io).', 'error');
       return null;
     }
-    if (!token) {
+    if (!config.token) {
       showStatus('Please enter your Vikunja API token.', 'error');
       return null;
     }
-    return { baseUrl, token };
+    return config;
+  }
+
+  function fillProjectSelect(selected) {
+    uiFillProjectSelect(defaultProjectSelect, projects, {
+      selectedId: selected,
+      placeholder: 'No default project',
+      placeholderDisabled: false,
+      fallbackToFirst: false,
+    });
   }
 
   async function init() {
-    const { baseUrl, token } = await getConfig();
-    urlInput.value = baseUrl;
-    tokenInput.value = token;
+    const [config, prefs] = await Promise.all([getConfig(), getPrefs()]);
+    urlInput.value = config.baseUrl;
+    tokenInput.value = config.token;
+    dueTodayInput.checked = prefs.dueToday;
+    customFilterInput.value = prefs.customFilter;
+    if (config.baseUrl && config.token) {
+      try {
+        projects = await listProjects();
+      } catch (e) {
+        projects = [];
+      }
+      fillProjectSelect(prefs.defaultProjectId);
+    }
   }
 
   async function save() {
@@ -75,6 +103,12 @@
         `Connected successfully${user && user.name ? ` as ${user.name}` : ''}.`,
         'ok'
       );
+      try {
+        projects = await listProjects();
+        fillProjectSelect(config.defaultProjectId);
+      } catch (e) {
+        showStatus(`Connected, but could not load projects: ${e.message}`, 'error');
+      }
     } catch (e) {
       showStatus(`Connection failed: ${e.message}`, 'error');
     } finally {

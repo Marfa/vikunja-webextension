@@ -3,12 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <title>Vikunja</title>
+  <link rel="stylesheet" href="../styles/common.css" />
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
   <header class="header">
-    <img src="../icons/icon-32.png" alt="Vikunja logo" width="28" height="28" />
-    <span class="title">Vikunja</span>
+    <img
+      id="logo"
+      src="../icons/icon-32.png"
+      alt="Vikunja logo"
+      width="28"
+      height="28"
+      role="button"
+      tabindex="0"
+      title="Open Vikunja"
+      aria-label="Open Vikunja"
+    />
+    <input
+      type="search"
+      id="search"
+      placeholder="Search tasks…"
+      autocomplete="off"
+      spellcheck="false"
+      aria-label="Search tasks"
+    />
     <button id="open-settings" class="icon-btn" title="Settings" aria-label="Open settings">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"></circle>
@@ -23,43 +41,42 @@
   </section>
 
   <section id="loading" class="view" hidden>
-    <p class="empty">Loading projects&hellip;</p>
+    <p class="empty">Loading tasks&hellip;</p>
   </section>
 
-  <form id="task-form" class="view" hidden>
-    <input
-      type="text"
-      id="title"
-      name="title"
-      placeholder="What needs to be done?"
-      maxlength="500"
-      autocomplete="off"
-      spellcheck="false"
-      required
-    />
-    <label class="field">
-      <span class="label">Project</span>
-      <select id="project"></select>
-    </label>
-    <label class="field">
-      <span class="label">Description (optional)</span>
-      <textarea id="description" name="description" rows="3" spellcheck="false"></textarea>
-    </label>
-    <div class="actions">
-      <span id="error" class="error" hidden></span>
-      <button type="submit" id="add" class="primary">Add task</button>
-    </div>
-  </form>
+  <section id="list" class="view" hidden>
+    <form id="quick-add" class="quick-add">
+      <input
+        type="text"
+        id="quick-title"
+        name="title"
+        placeholder="Add a task&hellip;"
+        maxlength="500"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <select id="quick-project" title="Project"></select>
+      <button type="submit" id="quick-add-btn" class="primary">Add</button>
+    </form>
+    <span id="quick-error" class="error" hidden></span>
+    <button id="add-site" class="secondary add-site">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+        <polyline points="15 3 21 3 21 9"></polyline>
+        <line x1="10" y1="14" x2="21" y2="3"></line>
+      </svg>
+      Add current website as task
+    </button>
 
-  <section id="done" class="view" hidden>
-    <p id="done-msg" class="empty"></p>
-    <div class="actions center">
-      <button id="add-another" class="secondary">Add another</button>
-      <button id="open-vikunja" class="secondary">Open Vikunja</button>
-    </div>
+    <ul id="task-list" class="task-list"></ul>
+    <p id="task-empty" class="empty" hidden>No tasks here yet.</p>
   </section>
+
+  <div id="toast" class="toast" hidden></div>
 
   <script src="../lib/vikunja.js"></script>
+  <script src="../lib/quick-add.js"></script>
+  <script src="../lib/ui.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

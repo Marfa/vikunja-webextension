@@ -1,37 +1,43 @@
-:root {
-  --blue: #196aff;
-  --blue-dark: #0f4bd8;
-  --ink: #20242a;
-  --muted: #6b7280;
-  --border: #d7dbe1;
-  --bg: #ffffff;
-  --err: #c0392b;
-}
-
-* {
-  box-sizing: border-box;
-}
-
 body {
-  width: 320px;
-  margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-size: 0.9rem;
-  color: var(--ink);
-  background: var(--bg);
+  width: 520px;
 }
 
 .header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 0.85rem;
+  padding: 0.6rem 0.85rem;
   border-bottom: 1px solid var(--border);
 }
 
-.header .title {
-  font-weight: 700;
-  font-size: 1rem;
+#logo {
+  flex: none;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+#logo:hover,
+#logo:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+.header input[type="search"] {
+  flex: 1;
+  min-width: 0;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f4f5f7;
+  font-family: inherit;
+}
+
+.header input[type="search"]:focus {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+  border-color: var(--blue);
+  background: #fff;
 }
 
 .icon-btn {
@@ -50,99 +56,186 @@ body {
   color: var(--ink);
 }
 
-.view {
-  padding: 0.85rem;
-}
-
-.empty {
-  color: var(--muted);
-  text-align: center;
-  margin: 0.5rem 0 0.75rem;
-}
-
-input[type="text"],
-textarea,
-select {
-  width: 100%;
-  padding: 0.55rem 0.7rem;
-  font-size: 0.9rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fff;
-  font-family: inherit;
-}
-
-textarea {
-  resize: vertical;
-  min-height: 60px;
-}
-
-input:focus,
-textarea:focus,
-select:focus {
-  outline: 2px solid var(--blue);
-  outline-offset: 1px;
-  border-color: var(--blue);
-}
-
-.field {
-  display: block;
-  margin-top: 0.75rem;
-}
-
-.label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 0.3rem;
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-
-.actions {
+.quick-add {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.85rem;
+  gap: 0.4rem;
 }
 
-.actions.center {
-  justify-content: center;
-}
-
-.error {
-  color: var(--err);
-  font-size: 0.8rem;
+.quick-add input {
   flex: 1;
 }
 
-button {
-  padding: 0.55rem 1rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px;
+.quick-add select {
+  width: auto;
+  max-width: 130px;
+}
+
+.quick-add button {
+  padding: 0.55rem 0.8rem;
+}
+
+.add-site {
+  width: 100%;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.task-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.task {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px solid #f0f2f4;
+}
+
+.task:last-child {
+  border-bottom: none;
+}
+
+/* Vikunja-style checkbox: hidden input + drawn SVG (matches FancyCheckbox) */
+.task-check {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  cursor: pointer;
+  margin-top: 1px;
+  padding: 2px 0 0 2px;
+}
+
+.task-check input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.task-check svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: #c8ccd4;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.2s ease;
+}
+
+.task-check svg path,
+.task-check svg polyline {
+  transition: stroke-dashoffset 0.2s linear;
+}
+
+.task-check svg path {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 0;
+}
+
+.task-check svg polyline {
+  stroke-dasharray: 22;
+  stroke-dashoffset: 66;
+}
+
+.task-check:hover input:not(:disabled) + svg,
+.task-check input:checked + svg {
+  stroke: var(--blue);
+}
+
+.task-check input:checked + svg path {
+  stroke-dashoffset: 60;
+}
+
+.task-check input:checked + svg polyline {
+  stroke-dashoffset: 42;
+}
+
+.task-check input:disabled + svg {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.task-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.task-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   cursor: pointer;
 }
 
-button.primary {
-  background: var(--blue);
-  color: #fff;
+.task-title:hover {
+  color: var(--blue);
 }
 
-button.primary:hover {
-  background: var(--blue-dark);
+.task.done .task-title {
+  color: var(--muted);
+  text-decoration: line-through;
 }
 
-button.secondary {
+.task-project {
+  flex: none;
+  color: var(--muted);
+  font-size: 0.78rem;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+}
+
+.task-due {
+  color: var(--muted);
+}
+
+.task-due.overdue {
+  color: var(--err);
+  font-weight: 600;
+}
+
+.task-due.today {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.task-tag {
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
   background: #eef0f3;
-  color: var(--ink);
-}
-
-button.secondary:hover {
-  background: #e2e5ea;
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: default;
+  color: var(--muted);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

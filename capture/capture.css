@@ -1,0 +1,60 @@
+body {
+  width: 540px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.header .title {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+textarea {
+  resize: vertical;
+}
+
+.field {
+  display: block;
+  margin-top: 0.75rem;
+}
+
+.label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.actions.center {
+  justify-content: center;
+}

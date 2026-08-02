@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Vikunja Settings</title>
+  <link rel="stylesheet" href="../styles/common.css" />
   <link rel="stylesheet" href="options.css" />
 </head>
 <body>
@@ -11,11 +12,12 @@
       <img src="../icons/icon-48.png" alt="Vikunja logo" width="48" height="48" />
       <div>
         <h1>Vikunja</h1>
-        <p class="subtitle">Connection settings</p>
+        <p class="subtitle">Extension settings</p>
       </div>
     </header>
 
     <form id="settings-form" novalidate>
+      <h2>Connection</h2>
       <label for="base-url">Vikunja URL</label>
       <input
         type="url"
@@ -38,18 +40,51 @@
         spellcheck="false"
         required
       />
-      <p class="hint">Create an API token in Vikunja under Settings &rarr; API Tokens.</p>
+      <p class="hint">Create an API token in Vikunja under Settings &rarr; API Tokens. Give the token at least these permissions:</p>
+      <ul class="permissions">
+        <li><code>tasks</code> &mdash; read_all, create, update</li>
+        <li><code>projects</code> &mdash; read_all</li>
+        <li><code>other</code> &mdash; user</li>
+      </ul>
+      <p class="hint">
+        If you use the Quick Add Magic syntax in the popup (<code>*label</code>, <code>+project</code>,
+        <code>!priority</code>, <code>@assignee</code>), also grant <code>labels</code> read_all &amp; create,
+        <code>tasks_labels</code> create, and <code>projects_users</code> read_all.
+      </p>
 
       <div class="actions">
         <button type="button" id="test" class="secondary">Test connection</button>
         <button type="submit" id="save">Save</button>
       </div>
+
+      <h2>Defaults</h2>
+      <label for="default-project">Default project</label>
+      <select id="default-project" name="defaultProjectId"></select>
+      <p class="hint">Tasks added from the popup and the capture window default to this project.</p>
+
+      <label class="checkbox">
+        <input type="checkbox" id="due-today" name="dueToday" />
+        <span>Set due date to today by default</span>
+      </label>
+      <p class="hint">New tasks get a due date of today (at Vikunja&rsquo;s nearest-hour time).</p>
+
+      <label for="custom-filter">Custom filter for the task list (optional)</label>
+      <input
+        type="text"
+        id="custom-filter"
+        name="customFilter"
+        placeholder="done = false"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <p class="hint">Applied to the popup task list. Setting a custom filter replaces the default <code>done = false</code> filter (which hides completed tasks). See <a href="https://vikunja.io/docs/filters" target="_blank" rel="noopener noreferrer">vikunja.io/docs/filters</a>.</p>
     </form>
 
     <p id="status" role="status" class="status" hidden></p>
   </main>
 
   <script src="../lib/vikunja.js"></script>
+  <script src="../lib/ui.js"></script>
   <script src="options.js"></script>
 </body>
 </html>
