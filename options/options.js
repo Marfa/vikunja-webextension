@@ -85,6 +85,11 @@
     if (!config) return;
     saveBtn.disabled = true;
     try {
+      // Ensure we have the permissions
+      if (!await api.permissions.request({ origins: [ new URL(config.baseUrl).origin + '/*' ] })) {
+        throw new Error(`Permission denied for ${config.baseUrl}`);
+      }
+
       await api.storage.sync.set(config);
       showStatus('Settings saved.', 'ok');
     } catch (e) {

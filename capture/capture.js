@@ -64,7 +64,11 @@
       titleInput.focus();
       titleInput.select();
     } catch (e) {
-      configMsg.textContent = `Could not load projects: ${e.message}`;
+      if (!await api.permissions.contains({ origins: [ new URL(baseUrl).origin + '/*' ] })) {
+        configMsg.textContent = 'Looks like we lost permissions to access your Vikunja. Please go to the settings and re-save.';
+      } else {
+        configMsg.textContent = `Could not load projects: ${e.message}`;
+      }
       configPrompt.hidden = false;
     }
   }

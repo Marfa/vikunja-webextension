@@ -42,7 +42,7 @@
     }
   },
   "permissions": ["storage", "activeTab", "contextMenus"],
-  "host_permissions": ["<all_urls>"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
   "minimum_chrome_version": "121",
   "browser_specific_settings": {
     "gecko": {

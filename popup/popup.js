@@ -675,8 +675,13 @@
     showView(list);
     quickTitle.focus();
     } catch (e) {
-      configPrompt.querySelector('.empty').textContent =
-        `Could not load tasks: ${e.message}`;
+      if (!await api.permissions.contains({ origins: [ new URL(config.baseUrl).origin + '/*' ] })) {
+        configPrompt.querySelector('.empty').textContent =
+          'Looks like we lost permissions to access your Vikunja. Please go to the settings and re-save.';
+      } else {
+        configPrompt.querySelector('.empty').textContent =
+          `Could not load tasks: ${e.message}`;
+      }
       showView(configPrompt);
     }
   }
