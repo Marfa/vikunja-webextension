@@ -1,7 +1,7 @@
 'use strict';
 const path = require('path');
 require(path.join(__dirname, '..', 'lib/quick-add.js'));
-const { parseTaskText, PrefixMode } = globalThis.QuickAdd;
+const { parseTaskText, PrefixMode, analyzeTaskText, removeSpan } = globalThis.QuickAdd;
 
 let pass = 0, fail = 0;
 function eq(actual, expected, msg) {
@@ -255,6 +255,79 @@ const mar = new Date(2022, 2, 32); // Mar 32 = Apr 1 2022
 r = parseTaskText('Lorem Ipsum 31st', PrefixMode.Default, mar);
 eq(r.date.getDate(), 31, '31st date');
 eq(r.date.getMonth(), 4, '31st may');
+
+// --- analyzeTaskText (token spans + removeSpan round-trip) ---
+const at = (t, mode = PrefixMode.Default, n = now) => analyzeTaskText(t, mode, n);
+
+eq(removeSpan('hello world', 0, 5), ' world', 'removeSpan start');
+eq(removeSpan('hello world', 6, 11), 'hello ', 'removeSpan end');
+eq(removeSpan('hello world', 5, 6), 'helloworld', 'removeSpan mid');
+
+eq(at('Lorem Ipsum').project, null, 'at no project');
+eq(at('Lorem Ipsum').labels, [], 'at no labels');
+eq(at('Lorem Ipsum').assignees, [], 'at no assignees');
+eq(at('Lorem Ipsum').priority, null, 'at no priority');
+eq(at('Lorem Ipsum').date, null, 'at no date');
+eq(at('Lorem Ipsum').repeats, null, 'at no repeats');
+
+const a1 = at('Water plants +Home !3 *focus @alice tomorrow every day');
+eq(a1.project.text, '+Home', 'at project text');
+eq(a1.project.start, 'Water plants '.length, 'at project start');
+eq(a1.project.end, 'Water plants +Home '.length, 'at project end');
+eq(a1.priority.text, '!3', 'at priority text');
+eq(a1.labels[0].text, '*focus', 'at label text');
+eq(a1.assignees[0].text, '@alice', 'at assignee text');
+eq(a1.date.text, 'tomorrow', 'at date text');
+eq(a1.repeats.text, 'every day', 'at repeat text');
+
+const q1 = at('buy *"a (a)" x');
+eq(q1.labels[0].text, '*a (a)', 'at quoted label text');
+eq(q1.labels[0].start, 'buy '.length, 'at quoted label start');
+eq(q1.labels[0].end, 'buy *"a (a)" '.length, 'at quoted label end');
+
+const od1 = at('*tomorrow tomorrow');
+eq(od1.labels[0].text, '*tomorrow', 'at label-today label');
+eq(od1.date.text, 'tomorrow', 'at label-today date');
+
+eq(at('Lorem Ipsum *x today', PrefixMode.Disabled).labels, [], 'at disabled no labels');
+eq(at('Lorem Ipsum *x today', PrefixMode.Disabled).date, null, 'at disabled no date');
+eq(at('"delete mails today"').date, null, 'at quoted escape no date');
+eq(at('"delete mails today"').labels, [], 'at quoted escape no labels');
+eq(at('Lorem Ipsum !9999').priority, null, 'at invalid priority');
+eq(at('Lorem Ipsum email@example.com').assignees, [], 'at email no assignee');
+
+const t1 = at('#Home Water @label +alice !2', PrefixMode.Todoist);
+eq(t1.project.text, '#Home', 'at todoist project');
+eq(t1.labels[0].text, '@label', 'at todoist label');
+eq(t1.assignees[0].text, '+alice', 'at todoist assignee');
+eq(t1.priority.text, '!2', 'at todoist priority');
+
+const b1 = at('The 9/11 Report due 10/12');
+eq(b1.date.text, '10/12', 'at boundary date');
+eq(b1.date.start, 'The 9/11 Report due'.length, 'at boundary date start');
+
+// Removing every token span from the original must reproduce parseTaskText's
+// cleaned title (assignees stay in the title, matching the parser).
+const roundTrip = [
+  'Water plants +Home !3 *focus @alice tomorrow every day',
+  'buy milk *groceries today',
+  'meeting 9/11 at 10:00 +Work',
+  'Call Alice @bob in 2 days !2',
+  'read +blog *article next monday',
+];
+for (const input of roundTrip) {
+  const tokens = at(input);
+  const spans = [];
+  if (tokens.project) spans.push(tokens.project);
+  if (tokens.priority) spans.push(tokens.priority);
+  tokens.labels.forEach((t) => spans.push(t));
+  if (tokens.date) spans.push(tokens.date);
+  if (tokens.repeats) spans.push(tokens.repeats);
+  spans.sort((x, y) => y.start - x.start);
+  let out = input;
+  for (const s of spans) out = removeSpan(out, s.start, s.end);
+  eq(out.trim(), parseTaskText(input).text, `at roundtrip ${input}`);
+}
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail > 0 ? 1 : 0);

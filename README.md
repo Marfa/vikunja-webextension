@@ -18,7 +18,12 @@ browser.
   projects (`+`/`#`), labels (`*`/`@`), priorities (`!`), assignees
   (`@`/`+`), natural-language dates and `every X` repeats. Both the Vikunja and
   Todoist prefix modes are supported, and the active mode is read from your
-  Vikunja frontend settings (never from the extension).
+  Vikunja frontend settings (never from the extension). While you type, a row
+  of select-backed chips (Project, Priority, Labels, Assignee, Date, Repeat)
+  appears below the input; picking a value writes the matching magic token into
+  the text, so you can fill every field without remembering the syntax. Chips
+  turn gray when a field is unset and color-coded once it is set. Once you
+  start typing, a compact Add button appears below the chips.
 - **Capture current page** — add the current tab, a selection or a link as a
   task via the right-click menu ("Add to Vikunja") or the `Alt+Shift+V`
   shortcut, then refine it in a small capture window before saving.
@@ -60,7 +65,7 @@ step). Run them from the repository root:
 node smoketests/vikunja_lib_test.js        # API client (pagination, tasks, labels, users)
 node smoketests/vikunja_popup_test.js      # popup UI + Quick Add Magic flow
 node smoketests/vikunja_extra_test.js      # options + capture windows
-node smoketests/quickadd_harness.js        # 840 Quick Add Magic parity assertions
+node smoketests/quickadd_harness.js        # 879 Quick Add Magic parity assertions
 ```
 
 Each suite prints a summary and exits non-zero on any failure, so the tests can

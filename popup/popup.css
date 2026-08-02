@@ -56,31 +56,113 @@ body {
   color: var(--ink);
 }
 
+.quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.quick-chips[hidden] {
+  display: none;
+}
+
+.chip {
+  align-items: center;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #eef0f3;
+  color: var(--muted);
+}
+
+.chip-select {
+  appearance: none;
+  -webkit-appearance: none;
+  width: auto;
+  flex: none;
+  border: 1px solid rgba(107, 114, 128, 0.35);
+  border-radius: 999px;
+  background: transparent
+    url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="8" height="5" viewBox="0 0 8 5"><path d="M1 1l3 3 3-3" stroke="%236b7280" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>')
+    no-repeat right 0.35rem center;
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 0.12rem 1.05rem 0.12rem 0.4rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+.chip-select:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+  border-radius: 999px;
+}
+
+.chip--project {
+  color: var(--blue);
+  background: rgba(25, 106, 255, 0.12);
+}
+
+.chip--priority {
+  color: var(--orange);
+  background: rgba(249, 115, 22, 0.12);
+}
+
+.chip--label {
+  color: var(--purple);
+  background: rgba(139, 92, 246, 0.12);
+}
+
+.chip--assignee {
+  color: var(--green);
+  background: rgba(22, 163, 74, 0.12);
+}
+
+.chip--date,
+.chip--repeat {
+  color: var(--teal);
+  background: rgba(13, 148, 136, 0.12);
+}
+
 .quick-add {
   display: flex;
+  flex-direction: column;
   gap: 0.4rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.25rem;
 }
 
-.quick-add input {
-  flex: 1;
+.quick-add textarea {
+  width: 100%;
+  min-height: 42px;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.4;
+  align-content: center;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #f4f5f7;
+  font-family: inherit;
 }
 
-.quick-add select {
-  width: auto;
-  max-width: 130px;
+.quick-add textarea:focus {
+  outline: none;
+  border-color: var(--blue);
+  background: #fff;
 }
 
 .quick-add button {
-  padding: 0.55rem 0.8rem;
-}
-
-.add-site {
   width: 100%;
-  margin-top: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
 }
 
 .task-list {

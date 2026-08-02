@@ -27,6 +27,12 @@
       spellcheck="false"
       aria-label="Search tasks"
     />
+    <button id="add-site" class="icon-btn" title="Add current page as task" aria-label="Add current page as task">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+    </button>
     <button id="open-settings" class="icon-btn" title="Settings" aria-label="Open settings">
       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"></circle>
@@ -46,27 +52,20 @@
 
   <section id="list" class="view" hidden>
     <form id="quick-add" class="quick-add">
-      <input
-        type="text"
+      <textarea
         id="quick-title"
         name="title"
+        rows="1"
         placeholder="Add a task&hellip;"
         maxlength="500"
         autocomplete="off"
         spellcheck="false"
-      />
-      <select id="quick-project" title="Project"></select>
-      <button type="submit" id="quick-add-btn" class="primary">Add</button>
+        aria-label="Add a task"
+      ></textarea>
+      <div id="quick-chips" class="quick-chips" hidden></div>
+      <button type="submit" id="quick-add-btn" class="primary" hidden>Add</button>
     </form>
     <span id="quick-error" class="error" hidden></span>
-    <button id="add-site" class="secondary add-site">
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-        <polyline points="15 3 21 3 21 9"></polyline>
-        <line x1="10" y1="14" x2="21" y2="3"></line>
-      </svg>
-      Add current website as task
-    </button>
 
     <ul id="task-list" class="task-list"></ul>
     <p id="task-empty" class="empty" hidden>No tasks here yet.</p>

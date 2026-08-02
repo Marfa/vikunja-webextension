@@ -20,8 +20,8 @@
     dueTodayISO,
   } = window.VikunjaLib;
 
-  const { parseTaskText, PrefixMode, PREFIXES, cleanupItemText } = window.QuickAdd;
-  const { openOptions: uiOpenOptions, showToast: uiShowToast, fillProjectSelect: uiFillProjectSelect } = window.UiLib;
+  const { parseTaskText, PrefixMode, PREFIXES, cleanupItemText, analyzeTaskText, removeSpan } = window.QuickAdd;
+  const { openOptions: uiOpenOptions, showToast: uiShowToast } = window.UiLib;
 
   const configPrompt = document.getElementById('config-prompt');
   const loading = document.getElementById('loading');
@@ -29,7 +29,7 @@
   const searchInput = document.getElementById('search');
   const quickForm = document.getElementById('quick-add');
   const quickTitle = document.getElementById('quick-title');
-  const quickProject = document.getElementById('quick-project');
+  const quickChips = document.getElementById('quick-chips');
   const quickAddBtn = document.getElementById('quick-add-btn');
   const quickError = document.getElementById('quick-error');
   const addSiteBtn = document.getElementById('add-site');
@@ -47,6 +47,18 @@
   let prefs = { defaultProjectId: null, dueToday: false, customFilter: '' };
   let tasks = [];
   let quickAddMode = PrefixMode.Default;
+  let currentProjectId = null;
+  let labelOptions = null;
+  const usersByProject = new Map();
+
+  const PLACEHOLDERS = {
+    [PrefixMode.Default]: 'Add a task: +Project *label !1 @user tomorrow',
+    [PrefixMode.Todoist]: 'Add a task: #Project @label !1 +user tomorrow',
+    [PrefixMode.Disabled]: 'Add a task…',
+  };
+
+  const DATE_PRESETS = ['tomorrow', 'in 2 days', 'in 3 days', 'in 1 week', 'next monday', 'next week'];
+  const REPEAT_PRESETS = ['every day', 'every 2 days', 'every week', 'every 2 weeks', 'every month'];
 
   function showView(view) {
     [configPrompt, loading, list].forEach((v) => {
@@ -59,17 +71,267 @@
     quickError.hidden = !message;
   }
 
-  async function restoreProject() {
-    let selected = prefs.defaultProjectId;
-    if (!selected) {
-      const { lastProjectId } = await api.storage.local.get({ lastProjectId: null });
-      selected = lastProjectId;
+  function autosize() {
+    const el = quickTitle;
+    el.style.height = 'auto';
+    if (typeof el.scrollHeight === 'number') {
+      el.style.height = Math.min(el.scrollHeight, 92) + 'px';
     }
-    uiFillProjectSelect(quickProject, [...projectsById.values()], {
-      selectedId: selected,
-      placeholder: 'Project',
-      fallbackToFirst: true,
+  }
+
+  function afterTokenChange() {
+    renderChips();
+    autosize();
+    quickTitle.focus();
+  }
+
+  // Writes `newToken` into the input, replacing an existing token of the same
+  // type when one is present (project/priority/date/repeat). The text stays the
+  // single source of truth; parseTaskText computes everything at submit.
+  function setToken(analyzed, type, newToken) {
+    const span =
+      type === 'project'
+        ? analyzed.project
+        : type === 'priority'
+          ? analyzed.priority
+          : type === 'date'
+            ? analyzed.date
+            : analyzed.repeats;
+    let text = quickTitle.value;
+    if (span !== null) {
+      const hadTrailingSpace = /\s$/.test(text.slice(span.start, span.end));
+      text = removeSpan(text, span.start, span.end);
+      const sepBefore = span.start > 0 && text[span.start - 1] !== ' ' ? ' ' : '';
+      const sepAfter = hadTrailingSpace ? ' ' : '';
+      text = text.slice(0, span.start) + sepBefore + newToken + sepAfter + text.slice(span.start);
+    } else {
+      const sep = text === '' || /\s$/.test(text) ? '' : ' ';
+      text = text + sep + newToken;
+    }
+    quickTitle.value = text;
+  }
+
+  function appendToken(newToken) {
+    const text = quickTitle.value;
+    const sep = text === '' || /\s$/.test(text) ? '' : ' ';
+    quickTitle.value = text + sep + newToken;
+  }
+
+  function makeChip(type) {
+    const sel = document.createElement('select');
+    sel.className = `chip chip-select${type ? ` chip--${type}` : ''}`;
+    quickChips.appendChild(sel);
+    return sel;
+  }
+
+  // Sizes a chip select to its currently displayed text (not its widest
+  // option), so the pill hugs the label. No-op without a real layout (e.g. the
+  // smoke-test fake DOM).
+  function sizeSelectToContent(sel) {
+    if (!document.body || typeof document.body.appendChild !== 'function') return;
+    const probe = document.createElement('span');
+    probe.style.cssText =
+      'position:absolute;visibility:hidden;white-space:nowrap;' +
+      'font:600 0.75rem system-ui,sans-serif;' +
+      'padding-left:0.4rem;padding-right:1.05rem;border:1px solid transparent;';
+    probe.textContent = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
+    document.body.appendChild(probe);
+    const width = probe.offsetWidth;
+    probe.remove();
+    if (width > 0) sel.style.width = width + 'px';
+  }
+
+  function chipOption(value, text) {
+    const opt = document.createElement('option');
+    opt.value = value;
+    opt.textContent = text;
+    return opt;
+  }
+
+  function buildProjectChip(tokens) {
+    const P = PREFIXES[quickAddMode];
+    const projId = effectiveProjectId(tokens);
+    const sel = makeChip('project');
+    sel.title = 'Project';
+    for (const p of projectsById.values()) {
+      sel.appendChild(chipOption(String(p.id), P && P.project ? `${P.project}${p.title}` : p.title));
+    }
+    sel.value = String(projId);
+    sel.addEventListener('change', (e) => {
+      const id = Number((e.target && e.target.value) ?? sel.value);
+      if (!projectsById.has(id) || id === projId) return;
+      if (P && P.project) {
+        setToken(tokens, 'project', P.project + projectsById.get(id).title);
+      } else {
+        currentProjectId = id;
+      }
+      afterTokenChange();
     });
+  }
+
+  function buildPriorityChip(tokens, P) {
+    const has = tokens.priority !== null;
+    const sel = makeChip(has ? 'priority' : '');
+    sel.title = 'Priority';
+    sel.appendChild(chipOption('', has ? tokens.priority.text : 'Priority'));
+    for (let n = 1; n <= 5; n++) {
+      sel.appendChild(chipOption(String(n), `${P.priority}${n}`));
+    }
+    sel.value = has ? tokens.priority.text.slice(P.priority.length) : '';
+    sel.addEventListener('change', (e) => {
+      const v = (e.target && e.target.value) ?? sel.value;
+      if (!v) return;
+      setToken(tokens, 'priority', P.priority + v);
+      afterTokenChange();
+    });
+  }
+
+  function buildLabelChip(tokens, P) {
+    if (labelOptions === null) {
+      labelOptions = [];
+      listLabels()
+        .then((labels) => {
+          labelOptions = labels || [];
+          renderChips();
+        })
+        .catch(() => {
+          labelOptions = [];
+        });
+    }
+    const names = tokens.labels.map((l) => l.text);
+    const sel = makeChip(names.length > 0 ? 'label' : '');
+    sel.title = 'Label';
+    sel.appendChild(chipOption('', names.length > 0 ? `Labels · ${names.length}` : 'Label'));
+    for (const lb of labelOptions) {
+      sel.appendChild(chipOption(String(lb.id), P.label + (lb.title || lb.name || lb.id)));
+    }
+    sel.value = '';
+    sel.addEventListener('change', (e) => {
+      const v = (e.target && e.target.value) ?? sel.value;
+      const lb = labelOptions.find((x) => String(x.id) === String(v));
+      if (!lb) return;
+      const token = P.label + (lb.title || lb.name || lb.id);
+      if (names.includes(token)) return;
+      appendToken(token);
+      afterTokenChange();
+    });
+  }
+
+  function buildAssigneeChip(tokens, P) {
+    const projId = effectiveProjectId(tokens);
+    let users;
+    if (!usersByProject.has(projId)) {
+      usersByProject.set(projId, null);
+      searchProjectUsers(projId, '')
+        .then((list) => {
+          usersByProject.set(projId, list || []);
+          renderChips();
+        })
+        .catch(() => {
+          usersByProject.set(projId, []);
+        });
+      users = null;
+    } else {
+      users = usersByProject.get(projId);
+    }
+    const tokensUsed = tokens.assignees.map((a) => a.text);
+    const sel = makeChip(tokensUsed.length > 0 ? 'assignee' : '');
+    sel.title = 'Assignee';
+    sel.appendChild(
+      chipOption(
+        '',
+        tokensUsed.length > 0 ? `Assignees · ${tokensUsed.length}` : users === null ? 'Assignees…' : 'Assignee'
+      )
+    );
+    if (users !== null) {
+      for (const u of users) {
+        const name = u.username || u.name || u.email;
+        if (!name) continue;
+        sel.appendChild(chipOption(String(u.id), P.assignee + name));
+      }
+      sel.disabled = users.length === 0;
+    } else {
+      sel.disabled = true;
+    }
+    sel.value = '';
+    sel.addEventListener('change', (e) => {
+      const v = (e.target && e.target.value) ?? sel.value;
+      const u = (users || []).find((x) => String(x.id) === String(v));
+      if (!u) return;
+      const token = P.assignee + (u.username || u.name || u.email);
+      if (tokensUsed.includes(token)) return;
+      appendToken(token);
+      afterTokenChange();
+    });
+  }
+
+  function buildDateChip(tokens) {
+    const has = tokens.date !== null;
+    const sel = makeChip(has ? 'date' : '');
+    sel.title = 'Date';
+    sel.appendChild(chipOption('', has ? tokens.date.text : 'Date'));
+    for (const preset of DATE_PRESETS) {
+      sel.appendChild(chipOption(preset, preset));
+    }
+    sel.value = '';
+    sel.addEventListener('change', (e) => {
+      const v = (e.target && e.target.value) ?? sel.value;
+      if (!v) return;
+      setToken(tokens, 'date', v);
+      afterTokenChange();
+    });
+  }
+
+  function buildRepeatChip(tokens) {
+    const has = tokens.repeats !== null;
+    const sel = makeChip(has ? 'repeat' : '');
+    sel.title = 'Repeat';
+    sel.appendChild(chipOption('', has ? tokens.repeats.text : 'Repeat'));
+    for (const preset of REPEAT_PRESETS) {
+      sel.appendChild(chipOption(preset, preset));
+    }
+    sel.value = '';
+    sel.addEventListener('change', (e) => {
+      const v = (e.target && e.target.value) ?? sel.value;
+      if (!v) return;
+      setToken(tokens, 'repeat', v);
+      afterTokenChange();
+    });
+  }
+
+  function renderChips() {
+    quickChips.textContent = '';
+    const hasText = Boolean(quickTitle.value.trim());
+    quickAddBtn.hidden = !hasText;
+    if (!hasText) {
+      quickChips.hidden = true;
+      return;
+    }
+    const tokens = analyzeTaskText(quickTitle.value, quickAddMode);
+    buildProjectChip(tokens);
+    const P = PREFIXES[quickAddMode];
+    if (P) {
+      buildPriorityChip(tokens, P);
+      buildLabelChip(tokens, P);
+      buildAssigneeChip(tokens, P);
+      buildDateChip(tokens);
+      buildRepeatChip(tokens);
+    }
+    quickChips.childNodes.forEach(sizeSelectToContent);
+    quickChips.hidden = false;
+  }
+
+  async function resolveCurrentProject() {
+    let id = prefs.defaultProjectId;
+    if (!id) {
+      const { lastProjectId } = await api.storage.local.get({ lastProjectId: null });
+      id = lastProjectId;
+    }
+    if (id && projectsById.has(id)) {
+      currentProjectId = id;
+    } else {
+      currentProjectId = projectsById.size ? [...projectsById.keys()][0] : null;
+    }
   }
 
   function hasDueDate(dateStr) {
@@ -231,20 +493,23 @@
     }
     showView(loading);
     try {
-      const [projects, t, p, mode] = await Promise.all([
-        listProjects(),
-        loadTasks(),
-        getPrefs(),
-        getQuickAddMagicMode().catch(() => PrefixMode.Default),
-      ]);
-      prefs = p;
-      quickAddMode = mode;
-      projectsById = new Map(projects.map((pr) => [pr.id, pr]));
-      tasks = t;
-      await restoreProject();
-      renderTasks();
-      showView(list);
-      quickTitle.focus();
+    const [projects, t, p, mode] = await Promise.all([
+      listProjects(),
+      loadTasks(),
+      getPrefs(),
+      getQuickAddMagicMode().catch(() => PrefixMode.Default),
+    ]);
+    prefs = p;
+    quickAddMode = mode;
+    projectsById = new Map(projects.map((pr) => [pr.id, pr]));
+    tasks = t;
+    quickTitle.placeholder = PLACEHOLDERS[quickAddMode] || 'Add a task…';
+    await resolveCurrentProject();
+    renderTasks();
+    renderChips();
+    autosize();
+    showView(list);
+    quickTitle.focus();
     } catch (e) {
       configPrompt.querySelector('.empty').textContent =
         `Could not load tasks: ${e.message}`;
@@ -268,6 +533,16 @@
     }
   }
 
+  function effectiveProjectId(tokens) {
+    if (tokens.project) {
+      const P = PREFIXES[quickAddMode];
+      const name = P && P.project ? tokens.project.text.slice(P.project.length) : tokens.project.text;
+      const resolved = resolveProject(name);
+      if (resolved) return resolved;
+    }
+    return currentProjectId;
+  }
+
   function resolveProject(parsedProject) {
     if (parsedProject) {
       const exact = [...projectsById.values()].find(
@@ -280,7 +555,7 @@
       );
       if (byIdentifier) return byIdentifier.id;
     }
-    return quickProject.value ? Number(quickProject.value) : null;
+    return currentProjectId;
   }
 
   // Mirrors the frontend's validateUser: with a single search result use a
@@ -373,9 +648,15 @@
       // If the whole input was magic, the frontend creates the task with the
       // raw title instead (no intents to act on).
       if (parsed.text === '') {
-        await createTask(quickProject.value, { title: rawTitle });
+        if (!currentProjectId) {
+          setQuickError('Please select a project.');
+          quickTitle.focus();
+          return;
+        }
+        await createTask(currentProjectId, { title: rawTitle });
         uiShowToast(toastEl, 'Task added.');
         quickTitle.value = '';
+        renderChips();
         renderTasks();
         quickTitle.focus();
         return;
@@ -384,7 +665,7 @@
       const projectId = resolveProject(parsed.project);
       if (!projectId) {
         setQuickError('Please select a project.');
-        quickProject.focus();
+        quickTitle.focus();
         return;
       }
 
@@ -428,6 +709,8 @@
       uiShowToast(toastEl, 'Task added.');
       quickTitle.value = '';
       await api.storage.local.set({ lastProjectId: projectId });
+      currentProjectId = projectId;
+      renderChips();
       renderTasks();
       quickTitle.focus();
     } catch (err) {
@@ -466,7 +749,21 @@
   });
   addSiteBtn.addEventListener('click', addCurrentSite);
   quickForm.addEventListener('submit', quickAdd);
-  quickTitle.addEventListener('input', () => setQuickError(''));
+  quickTitle.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (typeof quickForm.requestSubmit === 'function') {
+        quickForm.requestSubmit();
+      } else if (typeof quickForm.submit === 'function') {
+        quickForm.submit();
+      }
+    }
+  });
+  quickTitle.addEventListener('input', () => {
+    setQuickError('');
+    autosize();
+    renderChips();
+  });
   searchInput.addEventListener('input', renderTasks);
 
   load();

@@ -200,8 +200,13 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   assert(ids['task-list'].childNodes.length === 2, '2 tasks rendered, got ' + ids['task-list'].childNodes.length);
   assert(calls.listTasks.length === 1 && calls.listTasks[0].filter === 'done = false', 'default filter done=false, got ' + JSON.stringify(calls.listTasks[0]));
   assert(!calls.listTasks[0].projectId, 'no project filter without defaultProject');
-  assert(ids['quick-project'].options.length === 3, 'project select filled: placeholder + 2');
-  assert(ids['quick-project'].value === '1', 'no default project -> first project preselected');
+  assert(ids['quick-chips'].hidden === true, 'chips hidden while input empty');
+  assert(ids['quick-title'].placeholder.includes('+Project'), 'vikunja placeholder hints magic, got ' + JSON.stringify(ids['quick-title'].placeholder));
+
+  const triggerInput = () => {
+    const onInput = ids['quick-title'].listeners['input'];
+    onInput[onInput.length - 1]();
+  };
 
   const firstTask = ids['task-list'].childNodes[0];
   assert(firstTask.className.includes('task'), 'first row is task');
@@ -220,20 +225,18 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   assert(ids['task-list'].childNodes.length === 2, 'tasks persist after toggle (no refetch), got ' + ids['task-list'].childNodes.length);
 
   ids['quick-title'].value = 'Water plants';
-  ids['quick-project'].value = '2';
   const getSubmit = () => {
     const l = ids['quick-add'].listeners['submit'];
     return l[l.length - 1];
   };
   await getSubmit()({ preventDefault() {} });
   assert(calls.createTask.length === 1 && calls.createTask[0].data.title === 'Water plants', 'createTask called for quick add');
-  assert(calls.createTask[0].projectId === 2, 'quick add uses dropdown project');
+  assert(calls.createTask[0].projectId === 1, 'no magic project -> first project default');
   assert(ids['task-list'].childNodes.length === 3, 'new task appended locally, got ' + ids['task-list'].childNodes.length);
-  assert(storage.get('lastProjectId') === 2, 'lastProjectId persisted');
+  assert(storage.get('lastProjectId') === 1, 'lastProjectId persisted');
 
   // Quick Add Magic: +project, !priority, *label (vikunja mode)
   ids['quick-title'].value = '+Home Water plants !3 *focus';
-  ids['quick-project'].value = '1';
   await getSubmit()({ preventDefault() {} });
   assert(calls.createTask.length === 2, 'magic quick add creates task');
   assert(calls.createTask[1].projectId === 2, '+project resolves by exact title -> Home (2)');
@@ -244,11 +247,10 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   assert(magicCalls.addLabelToTask.length === 1 && magicCalls.addLabelToTask[0].taskId === 103 && magicCalls.addLabelToTask[0].labelId === 50, 'existing label attached to new task');
   assert(magicCalls.createLabel.length === 0, 'no createLabel when label exists');
 
-  // +project not found -> falls back to dropdown selection
+  // +project not found -> falls back to the last-used project
   ids['quick-title'].value = '+Nope Buy snacks';
-  ids['quick-project'].value = '2';
   await getSubmit()({ preventDefault() {} });
-  assert(calls.createTask.length === 3 && calls.createTask[2].projectId === 2, 'unknown +project falls back to dropdown');
+  assert(calls.createTask.length === 3 && calls.createTask[2].projectId === 2, 'unknown +project falls back to last-used project');
   assert(calls.createTask[2].data.title === 'Buy snacks', 'fallback title kept');
 
   // todoist mode: #project +assignee
@@ -256,21 +258,28 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   eval(src);
   await new Promise((r) => setTimeout(r, 20));
   ids['quick-title'].value = '#Home +alice Call Alice';
-  ids['quick-project'].value = '1';
   await getSubmit()({ preventDefault() {} });
   assert(calls.createTask.length === 4 && calls.createTask[3].projectId === 2, 'todoist #project resolves Home');
   assert(calls.createTask[3].data.title === 'Call Alice', 'todoist assignee cleaned from title, got ' + JSON.stringify(calls.createTask[3].data.title));
   assert(calls.createTask[3].data.assignees && calls.createTask[3].data.assignees[0].id === 7, 'todoist +assignee resolved to user 7');
 
-  // disabled mode: no magic parsing
+  // disabled mode: no magic parsing; only the project chip is shown and its
+  // selection becomes the submit project
   quickAddModeMock = 'disabled';
   eval(src);
   await new Promise((r) => setTimeout(r, 20));
+  assert(ids['quick-title'].placeholder === 'Add a task…', 'disabled placeholder, got ' + JSON.stringify(ids['quick-title'].placeholder));
+  ids['quick-title'].value = 'x';
+  triggerInput();
+  assert(ids['quick-chips'].childNodes.length === 1, 'disabled mode shows only the project chip, got ' + ids['quick-chips'].childNodes.length);
+  const disabledProj = ids['quick-chips'].childNodes[0];
+  assert(disabledProj.className.includes('chip--project'), 'disabled project chip colored');
+  disabledProj.value = '1';
+  await disabledProj.listeners['change'][0]({ target: disabledProj });
   ids['quick-title'].value = '+Home Raw *text';
-  ids['quick-project'].value = '1';
   await getSubmit()({ preventDefault() {} });
   assert(calls.createTask.length === 5 && calls.createTask[4].data.title === '+Home Raw *text', 'disabled mode keeps magic text as title');
-  assert(calls.createTask[4].projectId === 1, 'disabled mode uses dropdown project');
+  assert(calls.createTask[4].projectId === 1, 'disabled mode uses chip-selected project');
 
   // Logo opens the instance
   const opened = [];
@@ -298,7 +307,94 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   VikunjaLib.getPrefs = () => Promise.resolve({ defaultProjectId: 999, dueToday: false, customFilter: '' });
   eval(src);
   await new Promise((r) => setTimeout(r, 20));
-  assert(ids['quick-project'].value === '1', 'stale default project -> falls back to first project');
+  ids['quick-title'].value = 'x';
+  triggerInput();
+  assert(ids['quick-chips'].childNodes[0].value === '1', 'stale default project -> falls back to first project, got ' + ids['quick-chips'].childNodes[0].value);
+
+  // --- Quick Add chips: select-backed, write-into-the-text ---
+  quickAddModeMock = 'vikunja';
+  VikunjaLib.getPrefs = () => Promise.resolve({ defaultProjectId: null, dueToday: false, customFilter: '' });
+  storage.set('lastProjectId', null);
+  ids['quick-title'].value = '';
+  eval(src);
+  await new Promise((r) => setTimeout(r, 20));
+
+  assert(ids['quick-chips'].hidden === true, 'chips hidden when input empty');
+  assert(ids['quick-add-btn'].hidden === true, 'Add button hidden when input empty');
+  assert(ids['quick-title'].placeholder.includes('+Project'), 'vikunja placeholder hints magic, got ' + JSON.stringify(ids['quick-title'].placeholder));
+  const chips = () => ids['quick-chips'].childNodes;
+  const chipSel = (i) => chips()[i];
+
+  ids['quick-title'].value = '+Home Water !3 tomorrow every day';
+  triggerInput();
+  assert(ids['quick-chips'].hidden === false, 'chips shown once typing');
+  assert(ids['quick-add-btn'].hidden === false, 'Add button shown once typing');
+  assert(chips().length === 6, '6 chips in vikunja mode, got ' + chips().length);
+  assert(chipSel(0).className.includes('chip--project'), 'project chip colored');
+  assert(chipSel(0).value === '2', 'project chip reflects +Home, got ' + chipSel(0).value);
+  assert(chipSel(1).className.includes('chip--priority'), 'priority chip colored when !3 set');
+  assert(chipSel(1).value === '3', 'priority chip reflects !3, got ' + chipSel(1).value);
+  assert(!chipSel(2).className.includes('chip--label'), 'label chip neutral without labels');
+  assert(!chipSel(3).className.includes('chip--assignee'), 'assignee chip neutral without assignees');
+  assert(chipSel(4).className.includes('chip--date'), 'date chip colored with tomorrow');
+  assert(chipSel(5).className.includes('chip--repeat'), 'repeat chip colored with every day');
+
+  ids['quick-title'].value = 'Water';
+  triggerInput();
+  assert(chipSel(0).value === '1', 'no magic project -> first project default, got ' + chipSel(0).value);
+  assert(!chipSel(1).className.includes('chip--priority'), 'priority chip neutral without !');
+
+  chipSel(0).value = '2';
+  await chipSel(0).listeners['change'][0]({ target: chipSel(0) });
+  assert(ids['quick-title'].value === 'Water +Home', 'project chip writes +Home, got ' + JSON.stringify(ids['quick-title'].value));
+
+  ids['quick-title'].value = 'Water';
+  triggerInput();
+  chipSel(1).value = '2';
+  await chipSel(1).listeners['change'][0]({ target: chipSel(1) });
+  assert(ids['quick-title'].value === 'Water !2', 'priority chip writes !2, got ' + JSON.stringify(ids['quick-title'].value));
+
+  ids['quick-title'].value = 'Water';
+  triggerInput();
+  await new Promise((r) => setTimeout(r, 0));
+  chipSel(2).value = '50';
+  await chipSel(2).listeners['change'][0]({ target: chipSel(2) });
+  assert(ids['quick-title'].value === 'Water *focus', 'label chip appends *focus, got ' + JSON.stringify(ids['quick-title'].value));
+
+  ids['quick-title'].value = 'Water';
+  triggerInput();
+  chipSel(4).value = 'tomorrow';
+  await chipSel(4).listeners['change'][0]({ target: chipSel(4) });
+  assert(ids['quick-title'].value === 'Water tomorrow', 'date chip writes tomorrow, got ' + JSON.stringify(ids['quick-title'].value));
+
+  ids['quick-title'].value = 'Water';
+  triggerInput();
+  chipSel(5).value = 'every day';
+  await chipSel(5).listeners['change'][0]({ target: chipSel(5) });
+  assert(ids['quick-title'].value === 'Water every day', 'repeat chip writes every day, got ' + JSON.stringify(ids['quick-title'].value));
+
+  ids['quick-title'].value = 'Water tomorrow every day';
+  triggerInput();
+  assert(chipSel(4).className.includes('chip--date'), 'date chip colored when date present');
+  assert(chipSel(5).className.includes('chip--repeat'), 'repeat chip colored when repeat present');
+  chipSel(4).value = 'in 2 days';
+  await chipSel(4).listeners['change'][0]({ target: chipSel(4) });
+  assert(ids['quick-title'].value === 'Water in 2 days every day', 'date chip replaces existing date, got ' + JSON.stringify(ids['quick-title'].value));
+  chipSel(5).value = 'every week';
+  await chipSel(5).listeners['change'][0]({ target: chipSel(5) });
+  assert(ids['quick-title'].value === 'Water in 2 days every week', 'repeat chip replaces existing repeat, got ' + JSON.stringify(ids['quick-title'].value));
+
+  // todoist mode: placeholder and chip prefixes adjust
+  quickAddModeMock = 'todoist';
+  ids['quick-title'].value = '';
+  eval(src);
+  await new Promise((r) => setTimeout(r, 20));
+  assert(ids['quick-title'].placeholder.includes('#Project'), 'todoist placeholder, got ' + JSON.stringify(ids['quick-title'].placeholder));
+  ids['quick-title'].value = '#Home Call !2';
+  triggerInput();
+  assert(chips().length === 6, '6 chips in todoist mode, got ' + chips().length);
+  assert(chipSel(0).value === '2', 'todoist project chip resolves #Home, got ' + chipSel(0).value);
+  assert(chipSel(1).className.includes('chip--priority'), 'todoist priority chip colored');
 
   if (errors.length) {
     console.log('FAIL');
