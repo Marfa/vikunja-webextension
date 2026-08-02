@@ -108,9 +108,11 @@ body {
   position: relative;
   flex: none;
   display: inline-flex;
+  align-items: center;
   cursor: pointer;
-  margin-top: 1px;
-  padding: 2px 0 0 2px;
+  height: 1.4em;
+  padding: 0 0 0 2px;
+  margin: 0;
 }
 
 .task-check input {
@@ -185,6 +187,7 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
+  line-height: 1.4;
 }
 
 .task-title:hover {
