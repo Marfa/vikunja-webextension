@@ -64,6 +64,63 @@ body {
   color: var(--ink);
 }
 
+.sort-wrap {
+  position: relative;
+}
+
+.sort-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 10;
+  min-width: 160px;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.sort-menu[hidden] {
+  display: none;
+}
+
+.sort-menu li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sort-menu li:hover {
+  background: #eef0f3;
+}
+
+.sort-menu li.active {
+  font-weight: 600;
+  color: var(--blue);
+}
+
+.sort-menu li.menu-divider {
+  height: 1px;
+  padding: 0;
+  margin: 0.25rem 0;
+  background: var(--border);
+  cursor: default;
+}
+
+.sort-menu li.menu-divider:hover {
+  background: var(--border);
+}
+
 .quick-chips {
   display: flex;
   flex-wrap: wrap;

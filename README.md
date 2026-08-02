@@ -28,8 +28,17 @@ browser.
   task via the right-click menu ("Add to Vikunja") or the `Alt+Shift+V`
   shortcut, then refine it in a small capture window before saving.
 - **Options page** — configure your instance URL, API token (with the required
-  permissions documented on the page), default project, "due today" default and
-  a custom filter for the task list.
+  permissions documented on the page), default project, "due today" default, a
+  custom filter for the task list, the default sort order and whether to
+  remember your last sort choice.
+- **Sorting** — a sort button in the popup header opens a menu to order the
+  task list by Vikunja's manual position, title, created, updated, due date or
+  priority, each of which can be reversed (ascending/descending). Newly added
+  tasks are placed according to the active sort. Manual sorting uses Vikunja's
+  per-view position and therefore needs a default project; otherwise the list
+  falls back to newest first. The default sort is set in the options; with
+  "remember last sort choice" enabled, the popup stores your last pick in the
+  browser's local storage and it takes precedence.
 - **Keyboard shortcuts** — `Alt+Shift+K` opens the popup, `Alt+Shift+V` adds
   the current website as a task.
 

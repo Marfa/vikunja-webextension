@@ -10,6 +10,8 @@
   const defaultProjectSelect = document.getElementById('default-project');
   const dueTodayInput = document.getElementById('due-today');
   const customFilterInput = document.getElementById('custom-filter');
+  const sortByInput = document.getElementById('sort-by');
+  const rememberLastSortInput = document.getElementById('remember-last-sort');
   const saveBtn = document.getElementById('save');
   const testBtn = document.getElementById('test');
   const statusEl = document.getElementById('status');
@@ -33,6 +35,8 @@
       defaultProjectId: defaultProjectSelect.value || null,
       dueToday: dueTodayInput.checked,
       customFilter: customFilterInput.value.trim(),
+      sortBy: sortByInput.value || 'position',
+      rememberLastSort: rememberLastSortInput.checked,
     };
   }
 
@@ -64,6 +68,8 @@
     tokenInput.value = config.token;
     dueTodayInput.checked = prefs.dueToday;
     customFilterInput.value = prefs.customFilter;
+    sortByInput.value = prefs.sortBy || 'position';
+    rememberLastSortInput.checked = prefs.rememberLastSort;
     if (config.baseUrl && config.token) {
       try {
         projects = await listProjects();

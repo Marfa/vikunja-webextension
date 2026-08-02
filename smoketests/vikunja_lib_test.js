@@ -59,6 +59,8 @@ global.fetch = async (url, opts) => {
   const isList = path.endsWith('/projects')
     || path.endsWith('/tasks/all')
     || path.endsWith('/projects/3/tasks')
+    || /^\/api\/v1\/projects\/\d+\/views$/.test(path)
+    || /^\/api\/v1\/projects\/\d+\/views\/\d+\/tasks$/.test(path)
     || (path.endsWith('/tasks') && !path.endsWith('/projects/3/tasks'));
   if (isList) {
     assert.equal(u.searchParams.get('per_page'), '50', 'expected per_page=50');
@@ -79,7 +81,7 @@ const V = globalThis.VikunjaLib;
 
 (async () => {
   const prefs = await V.getPrefs();
-  assert.deepStrictEqual(prefs, { defaultProjectId: '7', dueToday: true, customFilter: 'done = false' });
+  assert.deepStrictEqual(prefs, { defaultProjectId: '7', dueToday: true, customFilter: 'done = false', sortBy: 'position', rememberLastSort: false });
 
   calls.length = 0;
   const allTasks = await V.listTasks();
@@ -101,6 +103,19 @@ const V = globalThis.VikunjaLib;
   assert.equal(fallback.length, 6, 'expected fallback to /tasks/all');
   assert.ok(calls.some(c => c.url.includes('/api/v1/tasks/all')), 'expected /tasks/all fallback');
   failTasksPath = false;
+
+  calls.length = 0;
+  const viewTasks = await V.listTasks({ projectId: 3, viewId: 7, filter: 'done = false', sortBy: 'position', orderBy: 'asc' });
+  assert.equal(viewTasks.length, 6);
+  assert.ok(calls.every(c => c.url.includes('/api/v1/projects/3/views/7/tasks')));
+  assert.ok(calls[0].url.includes('sort_by=position'));
+  assert.ok(calls[0].url.includes('order_by=asc'));
+
+  calls.length = 0;
+  const views = await V.listProjectViews(3);
+  assert.equal(views.length, 6);
+  assert.ok(calls.every(c => c.url.includes('/api/v1/projects/3/views')), 'expected views path');
+  assert.ok(calls[0].url.includes('per_page=50'));
 
   calls.length = 0;
   const done = await V.completeTask(5, true);

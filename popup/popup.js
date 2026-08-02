@@ -7,6 +7,7 @@
     getPrefs,
     listProjects,
     listTasks,
+    listProjectViews,
     createTask,
     completeTask,
     getQuickAddMagicMode,
@@ -32,6 +33,8 @@
   const quickChips = document.getElementById('quick-chips');
   const quickAddBtn = document.getElementById('quick-add-btn');
   const quickError = document.getElementById('quick-error');
+  const sortBtn = document.getElementById('sort-btn');
+  const sortMenu = document.getElementById('sort-menu');
   const addSiteBtn = document.getElementById('add-site');
   const taskList = document.getElementById('task-list');
   const taskEmpty = document.getElementById('task-empty');
@@ -50,6 +53,17 @@
   let currentProjectId = null;
   let labelOptions = null;
   const usersByProject = new Map();
+  let currentSort = { mode: 'created', orderBy: 'desc' };
+  let projectViews = null;
+
+  const SORT_MODES = {
+    position: { label: 'Manually sorted', sortBy: 'position', orderBy: 'asc', needsView: true },
+    title: { label: 'Title', sortBy: 'title', orderBy: 'asc' },
+    created: { label: 'Created', sortBy: 'created', orderBy: 'desc' },
+    updated: { label: 'Updated', sortBy: 'updated', orderBy: 'desc' },
+    due_date: { label: 'Due date', sortBy: 'due_date', orderBy: 'asc' },
+    priority: { label: 'Priority', sortBy: 'priority', orderBy: 'desc' },
+  };
 
   const PLACEHOLDERS = {
     [PrefixMode.Default]: 'Add a task: +Project *label !1 @user tomorrow',
@@ -476,12 +490,138 @@
     });
   }
 
+  // Resolve the sort to use: a remembered local choice wins over the options
+  // default, but only when "remember last sort" is enabled.
+  async function resolveSort() {
+    let mode = prefs.sortBy && SORT_MODES[prefs.sortBy] ? prefs.sortBy : 'position';
+    let orderBy = SORT_MODES[mode].orderBy;
+    if (prefs.rememberLastSort) {
+      try {
+        const { lastSort } = await api.storage.local.get({ lastSort: null });
+        if (lastSort && SORT_MODES[lastSort.mode]) {
+          mode = lastSort.mode;
+          orderBy = lastSort.orderBy === 'asc' || lastSort.orderBy === 'desc' ? lastSort.orderBy : SORT_MODES[mode].orderBy;
+        }
+      } catch (e) {
+        // Ignore local-storage failures and use the default.
+      }
+    }
+    currentSort = { mode, orderBy };
+  }
+
+  // Vikunja only orders by position through a project view, so manual sorting
+  // needs a default project; otherwise fall back to newest first.
+  function effectiveSortParams() {
+    const mode = SORT_MODES[currentSort.mode];
+    if (!mode.needsView) {
+      return { sortBy: mode.sortBy, orderBy: currentSort.orderBy };
+    }
+    if (!prefs.defaultProjectId) {
+      return { sortBy: 'created', orderBy: 'desc' };
+    }
+    return { sortBy: 'position', orderBy: currentSort.orderBy, needsView: true };
+  }
+
+  async function resolveManualView(projectId) {
+    if (!projectId) return null;
+    if (projectViews !== null) return projectViews;
+    try {
+      const views = await listProjectViews(projectId);
+      const listView = views.find((v) => v.type === 'list') || views[0];
+      projectViews = listView ? listView.id : null;
+    } catch (e) {
+      projectViews = null;
+    }
+    return projectViews;
+  }
+
   async function loadTasks() {
     const opts = { filter: prefs.customFilter || 'done = false' };
     if (prefs.defaultProjectId) {
       opts.projectId = prefs.defaultProjectId;
     }
+    const sort = effectiveSortParams();
+    opts.sortBy = sort.sortBy;
+    opts.orderBy = sort.orderBy;
+    if (sort.needsView) {
+      const viewId = await resolveManualView(prefs.defaultProjectId);
+      if (viewId) {
+        opts.viewId = viewId;
+      } else {
+        opts.sortBy = 'created';
+        opts.orderBy = 'desc';
+      }
+    }
     return listTasks(opts);
+  }
+
+  async function refreshTasks() {
+    tasks = await loadTasks();
+    renderTasks();
+  }
+
+  function sortLabel() {
+    const def = SORT_MODES[currentSort.mode];
+    const dir = currentSort.orderBy === 'asc' ? 'ascending' : 'descending';
+    return `Sort: ${def.label} (${dir})`;
+  }
+
+  function renderSortMenu() {
+    sortMenu.textContent = '';
+    for (const [key, def] of Object.entries(SORT_MODES)) {
+      const li = document.createElement('li');
+      li.textContent = def.label;
+      if (currentSort.mode === key) {
+        li.classList.add('active');
+      }
+      li.addEventListener('click', () => {
+        return setSort(key, SORT_MODES[key].orderBy);
+      });
+      sortMenu.appendChild(li);
+    }
+    const divider = document.createElement('li');
+    divider.className = 'menu-divider';
+    sortMenu.appendChild(divider);
+    const dir = document.createElement('li');
+    dir.textContent = currentSort.orderBy === 'asc' ? 'Ascending \u25B2' : 'Descending \u25BC';
+    dir.addEventListener('click', () => {
+      return setSort(currentSort.mode, currentSort.orderBy === 'asc' ? 'desc' : 'asc');
+    });
+    sortMenu.appendChild(dir);
+  }
+
+  async function setSort(mode, orderBy) {
+    if (currentSort.mode === mode && currentSort.orderBy === orderBy) {
+      closeSortMenu();
+      return;
+    }
+    currentSort = { mode, orderBy };
+    if (prefs.rememberLastSort) {
+      try {
+        await api.storage.local.set({ lastSort: { mode, orderBy } });
+      } catch (e) {
+        // Ignore storage failures; the choice still applies for this session.
+      }
+    }
+    sortBtn.title = sortLabel();
+    sortBtn.setAttribute('aria-label', sortLabel());
+    closeSortMenu();
+    try {
+      await refreshTasks();
+    } catch (e) {
+      uiShowToast(toastEl, `Could not reload tasks: ${e.message}`);
+    }
+  }
+
+  function closeSortMenu() {
+    sortMenu.hidden = true;
+    sortBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  function toggleSortMenu() {
+    renderSortMenu();
+    sortMenu.hidden = !sortMenu.hidden;
+    sortBtn.setAttribute('aria-expanded', String(!sortMenu.hidden));
   }
 
   async function load() {
@@ -493,18 +633,20 @@
     }
     showView(loading);
     try {
-    const [projects, t, p, mode] = await Promise.all([
+    const [projects, p, mode] = await Promise.all([
       listProjects(),
-      loadTasks(),
       getPrefs(),
       getQuickAddMagicMode().catch(() => PrefixMode.Default),
     ]);
     prefs = p;
     quickAddMode = mode;
     projectsById = new Map(projects.map((pr) => [pr.id, pr]));
-    tasks = t;
     quickTitle.placeholder = PLACEHOLDERS[quickAddMode] || 'Add a task…';
     await resolveCurrentProject();
+    await resolveSort();
+    sortBtn.title = sortLabel();
+    sortBtn.setAttribute('aria-label', sortLabel());
+    tasks = await loadTasks();
     renderTasks();
     renderChips();
     autosize();
@@ -657,7 +799,7 @@
         uiShowToast(toastEl, 'Task added.');
         quickTitle.value = '';
         renderChips();
-        renderTasks();
+        await refreshTasks();
         quickTitle.focus();
         return;
       }
@@ -705,13 +847,12 @@
 
       const created = await createTask(projectId, body);
       await addLabelsToTask(created.id, parsed.labels);
-      tasks.push(created);
       uiShowToast(toastEl, 'Task added.');
       quickTitle.value = '';
       await api.storage.local.set({ lastProjectId: projectId });
       currentProjectId = projectId;
       renderChips();
-      renderTasks();
+      await refreshTasks();
       quickTitle.focus();
     } catch (err) {
       setQuickError(err.message);
@@ -748,6 +889,22 @@
     }
   });
   addSiteBtn.addEventListener('click', addCurrentSite);
+  sortBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleSortMenu();
+  });
+  if (typeof document.addEventListener === 'function') {
+    document.addEventListener('click', (e) => {
+      if (!sortBtn.contains(e.target) && !sortMenu.contains(e.target)) {
+        closeSortMenu();
+      }
+    });
+  }
+  sortBtn.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeSortMenu();
+    }
+  });
   quickForm.addEventListener('submit', quickAdd);
   quickTitle.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {

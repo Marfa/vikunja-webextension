@@ -63,7 +63,7 @@ const VikunjaLib = {
   },
   normalizeBaseUrl: (u) => (u ? u.replace(/\/+$/, '') : ''),
   getConfig: () => Promise.resolve({ baseUrl: 'https://try.vikunja.io', token: 'tk_test' }),
-  getPrefs: () => Promise.resolve({ defaultProjectId: 1, dueToday: true, customFilter: 'priority >= 1' }),
+  getPrefs: () => Promise.resolve({ defaultProjectId: 1, dueToday: true, customFilter: 'priority >= 1', sortBy: 'due_date', rememberLastSort: true }),
   listProjects: () => Promise.resolve(projects),
   listTasks: () => Promise.resolve([]),
   createTask: (projectId, body) => { calls.createTask.push({ projectId, body }); return Promise.resolve({ id: 1 }); },
@@ -98,6 +98,8 @@ const root = path.join(__dirname, '..');
   assert(ids['token'].value === 'tk_test', 'options: token filled');
   assert(ids['due-today'].checked === true, 'options: due-today checked');
   assert(ids['custom-filter'].value === 'priority >= 1', 'options: filter filled');
+  assert(ids['sort-by'].value === 'due_date', 'options: default sort filled, got ' + ids['sort-by'].value);
+  assert(ids['remember-last-sort'].checked === true, 'options: remember-last-sort checked');
   assert(ids['default-project'].options.length === 3, 'options: default-project select filled');
 
   ids['base-url'].value = 'https://try.vikunja.io/';
@@ -107,6 +109,8 @@ const root = path.join(__dirname, '..');
   assert(calls.syncSet[0].baseUrl === 'https://try.vikunja.io', 'options: baseUrl normalized');
   assert(String(calls.syncSet[0].defaultProjectId) === '1', 'options: defaultProjectId preserved');
   assert(calls.syncSet[0].customFilter === 'priority >= 1', 'options: filter preserved');
+  assert(calls.syncSet[0].sortBy === 'due_date', 'options: sort preserved');
+  assert(calls.syncSet[0].rememberLastSort === true, 'options: remember-last-sort preserved');
 
   await ids['test'].listeners['click'][0]();
   assert(calls.request.length === 1 && calls.request[0].endpoint === 'user', 'options: test hits /user');

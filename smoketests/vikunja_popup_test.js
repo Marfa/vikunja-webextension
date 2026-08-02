@@ -78,7 +78,8 @@ function getById(id) {
 }
 
 const storage = new Map();
-const calls = { listTasks: [], createTask: [], completeTask: [] };
+const calls = { listTasks: [], createTask: [], completeTask: [], listProjectViews: [] };
+const createdTasks = [];
 const magicCalls = { searchProjectUsers: [], listLabels: [], createLabel: [], addLabelToTask: [] };
 let quickAddModeMock = 'vikunja';
 const labelFixture = [{ id: 50, title: 'focus', hex_color: 'ff0000' }];
@@ -128,13 +129,21 @@ const VikunjaLib = {
   getConfig: () => Promise.resolve({ baseUrl: 'https://try.vikunja.io' }),
   getPrefs: () => Promise.resolve({ defaultProjectId: null, dueToday: false, customFilter: '' }),
   listProjects: () => Promise.resolve(projects),
+  listProjectViews: (projectId) => {
+    calls.listProjectViews.push(projectId);
+    return Promise.resolve([{ id: 10, title: 'List', type: 'list' }]);
+  },
   listTasks: (opts) => {
     calls.listTasks.push(opts);
-    return Promise.resolve(JSON.parse(JSON.stringify(tasksFixture)));
+    return Promise.resolve(
+      JSON.parse(JSON.stringify(tasksFixture)).concat(JSON.parse(JSON.stringify(createdTasks)))
+    );
   },
   createTask: (projectId, data) => {
     calls.createTask.push({ projectId, data });
-    return Promise.resolve({ id: 103, title: data.title, description: '', project_id: Number(projectId), done: false, due_date: '0001-01-01T00:00:00Z', labels: null });
+    const task = { id: 102 + createdTasks.length + 1, title: data.title, description: '', project_id: Number(projectId), done: false, due_date: '0001-01-01T00:00:00Z', labels: null };
+    createdTasks.push(task);
+    return Promise.resolve(JSON.parse(JSON.stringify(task)));
   },
   completeTask: (id, done) => {
     calls.completeTask.push({ id, done });
@@ -232,7 +241,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   await getSubmit()({ preventDefault() {} });
   assert(calls.createTask.length === 1 && calls.createTask[0].data.title === 'Water plants', 'createTask called for quick add');
   assert(calls.createTask[0].projectId === 1, 'no magic project -> first project default');
-  assert(ids['task-list'].childNodes.length === 3, 'new task appended locally, got ' + ids['task-list'].childNodes.length);
+  assert(ids['task-list'].childNodes.length === 3, 'task list re-fetches after add (shows new task), got ' + ids['task-list'].childNodes.length);
   assert(storage.get('lastProjectId') === 1, 'lastProjectId persisted');
 
   // Quick Add Magic: +project, !priority, *label (vikunja mode)
@@ -244,7 +253,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   assert(calls.createTask[1].data.priority === 3, '!3 priority parsed');
   assert(calls.createTask[1].data.project_id === 2, 'project_id in body');
   assert(magicCalls.listLabels.length === 1, 'listLabels called for magic label');
-  assert(magicCalls.addLabelToTask.length === 1 && magicCalls.addLabelToTask[0].taskId === 103 && magicCalls.addLabelToTask[0].labelId === 50, 'existing label attached to new task');
+  assert(magicCalls.addLabelToTask.length === 1 && magicCalls.addLabelToTask[0].taskId === 104 && magicCalls.addLabelToTask[0].labelId === 50, 'existing label attached to new task');
   assert(magicCalls.createLabel.length === 0, 'no createLabel when label exists');
 
   // +project not found -> falls back to the last-used project
@@ -395,6 +404,79 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   assert(chips().length === 6, '6 chips in todoist mode, got ' + chips().length);
   assert(chipSel(0).value === '2', 'todoist project chip resolves #Home, got ' + chipSel(0).value);
   assert(chipSel(1).className.includes('chip--priority'), 'todoist priority chip colored');
+
+  // --- Sort button: dropdown, reverse, remember last choice ---
+  quickAddModeMock = 'vikunja';
+  VikunjaLib.getPrefs = () => Promise.resolve({ defaultProjectId: null, dueToday: false, customFilter: '', sortBy: 'created', rememberLastSort: true });
+  storage.set('lastSort', null);
+  ids['quick-title'].value = '';
+  ids['sort-menu'].hidden = true;
+  eval(src);
+  await new Promise((r) => setTimeout(r, 20));
+
+  assert(ids['sort-menu'].hidden === true, 'sort menu hidden initially');
+  assert(ids['sort-btn'].title.includes('Created'), 'sort button title shows current sort, got ' + JSON.stringify(ids['sort-btn'].title));
+  assert(calls.listTasks[calls.listTasks.length - 1].sortBy === 'created', 'default sort from prefs (created), got ' + JSON.stringify(calls.listTasks[calls.listTasks.length - 1]));
+  assert(calls.listTasks[calls.listTasks.length - 1].orderBy === 'desc', 'created defaults to desc');
+
+  const sortClick = () => {
+    const l = ids['sort-btn'].listeners['click'];
+    return l[l.length - 1];
+  };
+  sortClick()({ stopPropagation() {} });
+  assert(ids['sort-menu'].hidden === false, 'sort menu opens on click');
+  const sortItems = () => ids['sort-menu'].childNodes;
+  const dueItem = sortItems().find((li) => li._text === 'Due date');
+  assert(!!dueItem, 'sort menu lists Due date, got ' + JSON.stringify(sortItems().map((li) => li._text)));
+
+  const before = calls.listTasks.length;
+  await dueItem.listeners['click'][0]();
+  assert(calls.listTasks.length === before + 1, 'picking a sort reloads tasks, got ' + calls.listTasks.length + ' vs ' + before);
+  const lastFetch = calls.listTasks[calls.listTasks.length - 1];
+  assert(lastFetch.sortBy === 'due_date', 'due date sort applied, got ' + JSON.stringify(lastFetch));
+  assert(lastFetch.orderBy === 'asc', 'due date natural direction asc');
+  assert(storage.get('lastSort') && storage.get('lastSort').mode === 'due_date' && storage.get('lastSort').orderBy === 'asc', 'remember last sort writes mode+order to local, got ' + JSON.stringify(storage.get('lastSort')));
+
+  sortClick()({ stopPropagation() {} });
+  const dirItem = sortItems()[sortItems().length - 1];
+  assert(dirItem._text.includes('Ascending'), 'menu shows current direction, got ' + JSON.stringify(dirItem._text));
+  dirItem.listeners['click'][0]();
+  await new Promise((r) => setTimeout(r, 0));
+  const lastFetch2 = calls.listTasks[calls.listTasks.length - 1];
+  assert(lastFetch2.sortBy === 'due_date' && lastFetch2.orderBy === 'desc', 'direction toggle reverses to desc, got ' + JSON.stringify(lastFetch2));
+  assert(storage.get('lastSort').orderBy === 'desc', 'reversed direction remembered');
+
+  // rememberLastSort off: local lastSort is ignored, prefs default wins
+  VikunjaLib.getPrefs = () => Promise.resolve({ defaultProjectId: null, dueToday: false, customFilter: '', sortBy: 'priority', rememberLastSort: false });
+  storage.set('lastSort', { mode: 'due_date', orderBy: 'desc' });
+  ids['quick-title'].value = '';
+  eval(src);
+  await new Promise((r) => setTimeout(r, 20));
+  const lastFetch3 = calls.listTasks[calls.listTasks.length - 1];
+  assert(lastFetch3.sortBy === 'priority', 'ignores local lastSort when remember is off, got ' + JSON.stringify(lastFetch3));
+  assert(lastFetch3.orderBy === 'desc', 'priority defaults to desc');
+
+  // manual sort: default project set, position sort resolves a view id
+  VikunjaLib.getPrefs = () => Promise.resolve({ defaultProjectId: 9, dueToday: false, customFilter: '', sortBy: 'position', rememberLastSort: false });
+  storage.set('lastSort', null);
+  ids['quick-title'].value = '';
+  ids['sort-menu'].hidden = true;
+  eval(src);
+  await new Promise((r) => setTimeout(r, 20));
+  const lastFetch4 = calls.listTasks[calls.listTasks.length - 1];
+  assert(calls.listProjectViews.includes(9), 'resolves views for the default project, got ' + JSON.stringify(calls.listProjectViews));
+  assert(lastFetch4.viewId === 10, 'passes the list view id to listTasks, got ' + JSON.stringify(lastFetch4));
+  assert(lastFetch4.sortBy === 'position' && lastFetch4.orderBy === 'asc', 'position sort via view, got ' + JSON.stringify(lastFetch4));
+  assert(lastFetch4.projectId === 9, 'default project filter preserved');
+
+  // manual sort without a resolvable view: falls back to created desc
+  calls.listProjectViews.length = 0;
+  VikunjaLib.listProjectViews = () => Promise.resolve([]);
+  ids['quick-title'].value = '';
+  eval(src);
+  await new Promise((r) => setTimeout(r, 20));
+  const lastFetch5 = calls.listTasks[calls.listTasks.length - 1];
+  assert(lastFetch5.sortBy === 'created' && lastFetch5.orderBy === 'desc', 'falls back to created desc without a view, got ' + JSON.stringify(lastFetch5));
 
   if (errors.length) {
     console.log('FAIL');
