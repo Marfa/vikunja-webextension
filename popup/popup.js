@@ -71,7 +71,7 @@
     [PrefixMode.Disabled]: 'Add a task…',
   };
 
-  const DATE_PRESETS = ['tomorrow', 'in 2 days', 'in 3 days', 'in 1 week', 'next monday', 'next week'];
+  const DATE_PRESETS = ['today', 'tomorrow', 'in 2 days', 'in 3 days', 'in 1 week', 'next monday', 'next week'];
   const REPEAT_PRESETS = ['every day', 'every 2 days', 'every week', 'every 2 weeks', 'every month'];
 
   function showView(view) {
@@ -286,9 +286,9 @@
 
   function buildDateChip(tokens) {
     const has = tokens.date !== null;
-    const sel = makeChip(has ? 'date' : '');
-    sel.title = 'Date';
-    sel.appendChild(chipOption('', has ? tokens.date.text : 'Date'));
+    const sel = makeChip(has || prefs.dueToday ? 'date' : '');
+    sel.title = 'Due Date';
+    sel.appendChild(chipOption('', has ? tokens.date.text : prefs.dueToday ? 'today' : 'Due'));
     for (const preset of DATE_PRESETS) {
       sel.appendChild(chipOption(preset, preset));
     }
