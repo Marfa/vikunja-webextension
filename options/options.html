@@ -7,102 +7,94 @@
   <link rel="stylesheet" href="options.css" />
 </head>
 <body>
-  <main class="container">
-    <header class="header">
-      <img src="../icons/icon-48.png" alt="Vikunja logo" width="48" height="48" />
-      <div>
-        <h1>Vikunja</h1>
-        <p class="subtitle">Extension settings</p>
-      </div>
-    </header>
+  <form id="settings-form" novalidate>
+    <h2>Connection</h2>
+    <label for="base-url">Vikunja URL</label>
+    <input
+      type="url"
+      id="base-url"
+      name="baseUrl"
+      placeholder="https://try.vikunja.io"
+      autocomplete="off"
+      spellcheck="false"
+      required
+    />
+    <p class="hint">The address of your Vikunja instance, without a trailing slash.</p>
 
-    <form id="settings-form" novalidate>
-      <h2>Connection</h2>
-      <label for="base-url">Vikunja URL</label>
-      <input
-        type="url"
-        id="base-url"
-        name="baseUrl"
-        placeholder="https://try.vikunja.io"
-        autocomplete="off"
-        spellcheck="false"
-        required
-      />
-      <p class="hint">The address of your Vikunja instance, without a trailing slash.</p>
+    <label for="token">API Token</label>
+    <input
+      type="password"
+      id="token"
+      name="token"
+      placeholder="tk_xxxxxxxxxxxxxxxx"
+      autocomplete="off"
+      spellcheck="false"
+      required
+    />
+    <p class="hint">Create an API token in Vikunja under Settings &rarr; API Tokens. Give the token at least these permissions:</p>
+    <ul class="permissions">
+      <li><code>tasks</code> &mdash; read_all, create, update</li>
+      <li><code>projects</code> &mdash; read_all</li>
+      <li><code>other</code> &mdash; user</li>
+    </ul>
+    <p class="hint">
+      If you use the Quick Add Magic syntax in the popup (<code>*label</code>, <code>+project</code>,
+      <code>!priority</code>, <code>@assignee</code>), also grant <code>labels</code> read_all &amp; create,
+      <code>tasks_labels</code> create, and <code>projects_users</code> read_all.
+    </p>
 
-      <label for="token">API Token</label>
-      <input
-        type="password"
-        id="token"
-        name="token"
-        placeholder="tk_xxxxxxxxxxxxxxxx"
-        autocomplete="off"
-        spellcheck="false"
-        required
-      />
-      <p class="hint">Create an API token in Vikunja under Settings &rarr; API Tokens. Give the token at least these permissions:</p>
-      <ul class="permissions">
-        <li><code>tasks</code> &mdash; read_all, create, update</li>
-        <li><code>projects</code> &mdash; read_all</li>
-        <li><code>other</code> &mdash; user</li>
-      </ul>
-      <p class="hint">
-        If you use the Quick Add Magic syntax in the popup (<code>*label</code>, <code>+project</code>,
-        <code>!priority</code>, <code>@assignee</code>), also grant <code>labels</code> read_all &amp; create,
-        <code>tasks_labels</code> create, and <code>projects_users</code> read_all.
-      </p>
+    <h2>Defaults</h2>
+    <label for="default-project">Default project</label>
+    <select id="default-project" name="defaultProjectId"></select>
+    <p class="hint">Tasks added from the popup and the capture window default to this project.</p>
 
-      <div class="actions">
-        <button type="button" id="test" class="secondary">Test connection</button>
-        <button type="submit" id="save">Save</button>
-      </div>
+    <label class="checkbox">
+      <input type="checkbox" id="due-today" name="dueToday" />
+      <span>Set due date to today by default</span>
+    </label>
+    <p class="hint">New tasks get a due date of today (at Vikunja&rsquo;s nearest-hour time).</p>
 
-      <h2>Defaults</h2>
-      <label for="default-project">Default project</label>
-      <select id="default-project" name="defaultProjectId"></select>
-      <p class="hint">Tasks added from the popup and the capture window default to this project.</p>
+    <label for="sort-by">Default sort order</label>
+    <select id="sort-by" name="sortBy">
+      <option value="position">Manually sorted</option>
+      <option value="title">Title</option>
+      <option value="created">Created (newest first)</option>
+      <option value="updated">Updated</option>
+      <option value="due_date">Due date</option>
+      <option value="priority">Priority</option>
+    </select>
+    <p class="hint">
+      Used for the popup task list. Manual sorting needs a default project (Vikunja
+      only orders by position inside a project view); otherwise the list falls back
+      to newest first. You can change the order and direction from the popup.
+    </p>
 
-      <label class="checkbox">
-        <input type="checkbox" id="due-today" name="dueToday" />
-        <span>Set due date to today by default</span>
-      </label>
-      <p class="hint">New tasks get a due date of today (at Vikunja&rsquo;s nearest-hour time).</p>
+    <label class="checkbox">
+      <input type="checkbox" id="remember-last-sort" name="rememberLastSort" />
+      <span>Remember last sort choice</span>
+    </label>
+    <p class="hint">When enabled, the sort you pick in the popup is stored locally in the extension and overrides this default.</p>
 
-      <label for="sort-by">Default sort order</label>
-      <select id="sort-by" name="sortBy">
-        <option value="position">Manually sorted</option>
-        <option value="title">Title</option>
-        <option value="created">Created (newest first)</option>
-        <option value="updated">Updated</option>
-        <option value="due_date">Due date</option>
-        <option value="priority">Priority</option>
-      </select>
-      <p class="hint">
-        Used for the popup task list. Manual sorting needs a default project (Vikunja
-        only orders by position inside a project view); otherwise the list falls back
-        to newest first. You can change the order and direction from the popup.
-      </p>
+    <label for="custom-filter">Custom filter for the task list (optional)</label>
+    <input
+      type="text"
+      id="custom-filter"
+      name="customFilter"
+      placeholder="done = false"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <p class="hint">Applied to the popup task list. Setting a custom filter replaces the default <code>done = false</code> filter (which hides completed tasks). See <a href="https://vikunja.io/docs/filters" target="_blank" rel="noopener noreferrer">vikunja.io/docs/filters</a>.</p>
 
-      <label class="checkbox">
-        <input type="checkbox" id="remember-last-sort" name="rememberLastSort" />
-        <span>Remember last sort choice</span>
-      </label>
-      <p class="hint">When enabled, the sort you pick in the popup is stored locally in the extension and overrides this default.</p>
+    <div class="actions">
+      <button type="button" id="test" class="secondary">Test connection</button>
+      <button type="submit" id="save">Save</button>
+    </div>
 
-      <label for="custom-filter">Custom filter for the task list (optional)</label>
-      <input
-        type="text"
-        id="custom-filter"
-        name="customFilter"
-        placeholder="done = false"
-        autocomplete="off"
-        spellcheck="false"
-      />
-      <p class="hint">Applied to the popup task list. Setting a custom filter replaces the default <code>done = false</code> filter (which hides completed tasks). See <a href="https://vikunja.io/docs/filters" target="_blank" rel="noopener noreferrer">vikunja.io/docs/filters</a>.</p>
-    </form>
+  </form>
 
-    <p id="status" role="status" class="status" hidden></p>
-  </main>
+  <p id="status" role="status" class="status" hidden></p>
+  <br />
 
   <script src="../lib/vikunja.js"></script>
   <script src="../lib/ui.js"></script>

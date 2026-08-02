@@ -23,8 +23,7 @@
     "scripts": ["lib/vikunja.js", "background/background.js"]
   },
   "options_ui": {
-    "page": "options/options.html",
-    "open_in_tab": true
+    "page": "options/options.html"
   },
   "commands": {
     "_execute_action": {
