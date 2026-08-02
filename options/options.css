@@ -1,0 +1,137 @@
+:root {
+  --blue: #196aff;
+  --blue-dark: #0f4bd8;
+  --ink: #20242a;
+  --muted: #6b7280;
+  --border: #d7dbe1;
+  --bg: #ffffff;
+  --ok: #178a47;
+  --err: #c0392b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #f4f5f7;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.container {
+  max-width: 560px;
+  margin: 3rem auto;
+  padding: 2rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.header img {
+  border-radius: 8px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin: 1rem 0 0.35rem;
+}
+
+input[type="url"],
+input[type="password"] {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+
+input:focus {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+  border-color: var(--blue);
+}
+
+.hint {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+button {
+  padding: 0.6rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button#save {
+  background: var(--blue);
+  color: #fff;
+}
+
+button#save:hover {
+  background: var(--blue-dark);
+}
+
+button.secondary {
+  background: #eef0f3;
+  color: var(--ink);
+}
+
+button.secondary:hover {
+  background: #e2e5ea;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.status {
+  margin-top: 1.25rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.status.ok {
+  background: #e7f6ee;
+  color: var(--ok);
+}
+
+.status.error {
+  background: #fdeceb;
+  color: var(--err);
+}

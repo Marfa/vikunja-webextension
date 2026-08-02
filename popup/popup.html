@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vikunja</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="header">
+    <img src="../icons/icon-32.png" alt="Vikunja logo" width="28" height="28" />
+    <span class="title">Vikunja</span>
+    <button id="open-settings" class="icon-btn" title="Settings" aria-label="Open settings">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+    </button>
+  </header>
+
+  <section id="config-prompt" class="view" hidden>
+    <p class="empty">Vikunja is not configured yet.</p>
+    <button id="go-settings" class="primary">Open settings</button>
+  </section>
+
+  <section id="loading" class="view" hidden>
+    <p class="empty">Loading projects&hellip;</p>
+  </section>
+
+  <form id="task-form" class="view" hidden>
+    <input
+      type="text"
+      id="title"
+      name="title"
+      placeholder="What needs to be done?"
+      maxlength="500"
+      autocomplete="off"
+      spellcheck="false"
+      required
+    />
+    <label class="field">
+      <span class="label">Project</span>
+      <select id="project"></select>
+    </label>
+    <label class="field">
+      <span class="label">Description (optional)</span>
+      <textarea id="description" name="description" rows="3" spellcheck="false"></textarea>
+    </label>
+    <div class="actions">
+      <span id="error" class="error" hidden></span>
+      <button type="submit" id="add" class="primary">Add task</button>
+    </div>
+  </form>
+
+  <section id="done" class="view" hidden>
+    <p id="done-msg" class="empty"></p>
+    <div class="actions center">
+      <button id="add-another" class="secondary">Add another</button>
+      <button id="open-vikunja" class="secondary">Open Vikunja</button>
+    </div>
+  </section>
+
+  <script src="../lib/vikunja.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

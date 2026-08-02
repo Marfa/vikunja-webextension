@@ -1,0 +1,148 @@
+:root {
+  --blue: #196aff;
+  --blue-dark: #0f4bd8;
+  --ink: #20242a;
+  --muted: #6b7280;
+  --border: #d7dbe1;
+  --bg: #ffffff;
+  --err: #c0392b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 320px;
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 0.9rem;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.header .title {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.icon-btn {
+  margin-left: auto;
+  padding: 0.35rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.icon-btn:hover {
+  background: #eef0f3;
+  color: var(--ink);
+}
+
+.view {
+  padding: 0.85rem;
+}
+
+.empty {
+  color: var(--muted);
+  text-align: center;
+  margin: 0.5rem 0 0.75rem;
+}
+
+input[type="text"],
+textarea,
+select {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+  border-color: var(--blue);
+}
+
+.field {
+  display: block;
+  margin-top: 0.75rem;
+}
+
+.label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+.actions.center {
+  justify-content: center;
+}
+
+.error {
+  color: var(--err);
+  font-size: 0.8rem;
+  flex: 1;
+}
+
+button {
+  padding: 0.55rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button.primary {
+  background: var(--blue);
+  color: #fff;
+}
+
+button.primary:hover {
+  background: var(--blue-dark);
+}
+
+button.secondary {
+  background: #eef0f3;
+  color: var(--ink);
+}
+
+button.secondary:hover {
+  background: #e2e5ea;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

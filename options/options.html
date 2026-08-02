@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vikunja Settings</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <img src="../icons/icon-48.png" alt="Vikunja logo" width="48" height="48" />
+      <div>
+        <h1>Vikunja</h1>
+        <p class="subtitle">Connection settings</p>
+      </div>
+    </header>
+
+    <form id="settings-form" novalidate>
+      <label for="base-url">Vikunja URL</label>
+      <input
+        type="url"
+        id="base-url"
+        name="baseUrl"
+        placeholder="https://try.vikunja.io"
+        autocomplete="off"
+        spellcheck="false"
+        required
+      />
+      <p class="hint">The address of your Vikunja instance, without a trailing slash.</p>
+
+      <label for="token">API Token</label>
+      <input
+        type="password"
+        id="token"
+        name="token"
+        placeholder="tk_xxxxxxxxxxxxxxxx"
+        autocomplete="off"
+        spellcheck="false"
+        required
+      />
+      <p class="hint">Create an API token in Vikunja under Settings &rarr; API Tokens.</p>
+
+      <div class="actions">
+        <button type="button" id="test" class="secondary">Test connection</button>
+        <button type="submit" id="save">Save</button>
+      </div>
+    </form>
+
+    <p id="status" role="status" class="status" hidden></p>
+  </main>
+
+  <script src="../lib/vikunja.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
