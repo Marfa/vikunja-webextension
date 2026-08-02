@@ -316,9 +316,9 @@
   function renderChips() {
     quickChips.textContent = '';
     const hasText = Boolean(quickTitle.value.trim());
-    quickAddBtn.hidden = !hasText;
     if (!hasText) {
-      quickChips.hidden = true;
+      quickChips.classList.remove('show');
+      quickAddBtn.classList.remove('show');
       return;
     }
     const tokens = analyzeTaskText(quickTitle.value, quickAddMode);
@@ -332,7 +332,8 @@
       buildRepeatChip(tokens);
     }
     quickChips.childNodes.forEach(sizeSelectToContent);
-    quickChips.hidden = false;
+    quickChips.classList.add('show');
+    quickAddBtn.classList.add('show');
   }
 
   async function resolveCurrentProject() {
@@ -420,6 +421,7 @@
     visible.forEach((task) => {
       const li = document.createElement('li');
       li.className = 'task';
+      li.setAttribute('data-task-id', task.id);
       if (task.done) {
         li.classList.add('done');
       }
@@ -558,6 +560,21 @@
   async function refreshTasks() {
     tasks = await loadTasks();
     renderTasks();
+  }
+
+  // Adds a one-shot entrance animation to the row of the just-created task and
+  // scrolls it into view if it landed outside the visible area.
+  function flashNewTask(taskId) {
+    const li = Array.from(taskList.childNodes).find(
+      (c) =>
+        typeof c.getAttribute === 'function' &&
+        String(c.getAttribute('data-task-id')) === String(taskId)
+    );
+    if (!li) return;
+    li.classList.add('task--new');
+    if (typeof li.scrollIntoView === 'function') {
+      li.scrollIntoView({ block: 'nearest' });
+    }
   }
 
   function sortLabel() {
@@ -795,11 +812,12 @@
           quickTitle.focus();
           return;
         }
-        await createTask(currentProjectId, { title: rawTitle });
+        const created = await createTask(currentProjectId, { title: rawTitle });
         uiShowToast(toastEl, 'Task added.');
         quickTitle.value = '';
         renderChips();
         await refreshTasks();
+        flashNewTask(created.id);
         quickTitle.focus();
         return;
       }
@@ -853,6 +871,7 @@
       currentProjectId = projectId;
       renderChips();
       await refreshTasks();
+      flashNewTask(created.id);
       quickTitle.focus();
     } catch (err) {
       setQuickError(err.message);

@@ -25,6 +25,9 @@ function fakeElement(id) {
     setAttribute(k, v) {
       this[k] = v;
     },
+    getAttribute(k) {
+      return this[k] !== undefined ? String(this[k]) : null;
+    },
     querySelector() {
       return fakeElement(id + ':query');
     },
@@ -60,6 +63,9 @@ function fakeElement(id) {
           const set = new Set(self._className.split(/\s+/).filter(Boolean));
           names.forEach((n) => set.delete(n));
           self._className = [...set].join(' ');
+        },
+        contains(name) {
+          return self._className.split(/\s+/).includes(name);
         },
       };
     },
@@ -209,7 +215,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   assert(ids['task-list'].childNodes.length === 2, '2 tasks rendered, got ' + ids['task-list'].childNodes.length);
   assert(calls.listTasks.length === 1 && calls.listTasks[0].filter === 'done = false', 'default filter done=false, got ' + JSON.stringify(calls.listTasks[0]));
   assert(!calls.listTasks[0].projectId, 'no project filter without defaultProject');
-  assert(ids['quick-chips'].hidden === true, 'chips hidden while input empty');
+  assert(!ids['quick-chips'].classList.contains('show'), 'chips hidden while input empty');
   assert(ids['quick-title'].placeholder.includes('+Project'), 'vikunja placeholder hints magic, got ' + JSON.stringify(ids['quick-title'].placeholder));
 
   const triggerInput = () => {
@@ -242,6 +248,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   assert(calls.createTask.length === 1 && calls.createTask[0].data.title === 'Water plants', 'createTask called for quick add');
   assert(calls.createTask[0].projectId === 1, 'no magic project -> first project default');
   assert(ids['task-list'].childNodes.length === 3, 'task list re-fetches after add (shows new task), got ' + ids['task-list'].childNodes.length);
+  assert(ids['task-list'].childNodes[2].classList.contains('task--new'), 'new task row animated in');
   assert(storage.get('lastProjectId') === 1, 'lastProjectId persisted');
 
   // Quick Add Magic: +project, !priority, *label (vikunja mode)
@@ -328,16 +335,16 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   eval(src);
   await new Promise((r) => setTimeout(r, 20));
 
-  assert(ids['quick-chips'].hidden === true, 'chips hidden when input empty');
-  assert(ids['quick-add-btn'].hidden === true, 'Add button hidden when input empty');
+  assert(!ids['quick-chips'].classList.contains('show'), 'chips hidden when input empty');
+  assert(!ids['quick-add-btn'].classList.contains('show'), 'Add button hidden when input empty');
   assert(ids['quick-title'].placeholder.includes('+Project'), 'vikunja placeholder hints magic, got ' + JSON.stringify(ids['quick-title'].placeholder));
   const chips = () => ids['quick-chips'].childNodes;
   const chipSel = (i) => chips()[i];
 
   ids['quick-title'].value = '+Home Water !3 tomorrow every day';
   triggerInput();
-  assert(ids['quick-chips'].hidden === false, 'chips shown once typing');
-  assert(ids['quick-add-btn'].hidden === false, 'Add button shown once typing');
+  assert(ids['quick-chips'].classList.contains('show'), 'chips shown once typing');
+  assert(ids['quick-add-btn'].classList.contains('show'), 'Add button shown once typing');
   assert(chips().length === 6, '6 chips in vikunja mode, got ' + chips().length);
   assert(chipSel(0).className.includes('chip--project'), 'project chip colored');
   assert(chipSel(0).value === '2', 'project chip reflects +Home, got ' + chipSel(0).value);

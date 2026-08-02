@@ -128,8 +128,37 @@ body {
   gap: 0.3rem;
 }
 
-.quick-chips[hidden] {
-  display: none;
+.quick-chips,
+#quick-add-btn {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-4px);
+  margin-top: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  visibility: hidden;
+  transition: max-height 0.15s ease-out, opacity 0.15s ease-out, transform 0.15s ease-out,
+    margin-top 0.15s ease-out, padding-top 0.15s ease-out, padding-bottom 0.15s ease-out,
+    visibility 0.15s;
+}
+
+.quick-chips.show {
+  max-height: 5rem;
+  opacity: 1;
+  transform: none;
+  margin-top: 0.4rem;
+  visibility: visible;
+}
+
+#quick-add-btn.show {
+  max-height: 2.5rem;
+  opacity: 1;
+  transform: none;
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+  visibility: visible;
 }
 
 .chip {
@@ -195,12 +224,24 @@ body {
 }
 
 .quick-add {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  padding-top: 0.55rem;
+  padding: 0.5rem;
   border-top: 1px solid var(--border);
   margin-top: 0.5rem;
+}
+
+.quick-add #quick-error {
+  margin-top: 0.4rem;
+}
+
+#toast {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.5rem);
+  transform: translateX(-50%);
+  z-index: 5;
 }
 
 .quick-add textarea {
@@ -238,6 +279,7 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  padding: 0;
 }
 
 .task-list {
@@ -245,7 +287,7 @@ body {
   flex: 1;
   min-height: 0;
   margin: 0;
-  padding: 0;
+  padding: 0 0.5rem;
   overflow-y: auto;
 }
 
@@ -253,12 +295,29 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 0.6rem;
-  padding: 0.5rem 0.25rem;
+  padding: 0.5rem 0;
   border-bottom: 1px solid #f0f2f4;
 }
 
 .task:last-child {
   border-bottom: none;
+}
+
+.task--new {
+  animation: task-enter 0.45s ease-out;
+}
+
+@keyframes task-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task--new {
+    animation: none;
+  }
 }
 
 /* Vikunja-style checkbox: hidden input + drawn SVG (matches FancyCheckbox) */
@@ -365,6 +424,7 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  padding-right: 0.5rem;
 }
 
 .task-meta {
