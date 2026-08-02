@@ -78,6 +78,11 @@
     [configPrompt, loading, list].forEach((v) => {
       v.hidden = v !== view;
     });
+    // If we are in the config stage, also disable the top bar
+    searchInput.hidden = view === configPrompt;
+    sortBtn.hidden = view === configPrompt;
+    addSiteBtn.hidden = view === configPrompt;
+    openSettingsBtn.hidden = view === configPrompt;
   }
 
   function setQuickError(message) {

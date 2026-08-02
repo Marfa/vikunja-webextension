@@ -95,6 +95,7 @@
   }
 
   async function test() {
+    await save();
     const config = validate();
     if (!config) return;
     testBtn.disabled = true;

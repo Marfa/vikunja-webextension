@@ -83,6 +83,7 @@ button {
 button.primary {
   background: var(--blue);
   color: #fff;
+  width: 100%;
 }
 
 button.primary:hover {
