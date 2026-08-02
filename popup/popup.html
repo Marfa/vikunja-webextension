@@ -51,6 +51,8 @@
   </section>
 
   <section id="list" class="view" hidden>
+    <ul id="task-list" class="task-list"></ul>
+    <p id="task-empty" class="empty" hidden>No tasks here yet.</p>
     <form id="quick-add" class="quick-add">
       <textarea
         id="quick-title"
@@ -66,9 +68,6 @@
       <button type="submit" id="quick-add-btn" class="primary" hidden>Add</button>
     </form>
     <span id="quick-error" class="error" hidden></span>
-
-    <ul id="task-list" class="task-list"></ul>
-    <p id="task-empty" class="empty" hidden>No tasks here yet.</p>
   </section>
 
   <div id="toast" class="toast" hidden></div>
