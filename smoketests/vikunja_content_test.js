@@ -302,6 +302,7 @@ global.document = {
   body,
   documentElement: body,
   createElement: (tag) => makeEl(tag),
+  createElementNS: (_ns, tag) => makeEl(tag),
   createTextNode: (text) => { const n = makeEl('#text'); n.textContent = text; return n; },
   querySelectorAll: (sel) => queryAll(doc, sel),
   querySelector: (sel) => queryAll(doc, sel)[0] || null,
@@ -318,6 +319,14 @@ const menuButtonsOf = () => optionList._children.filter((c) => c.getAttribute('a
   // Preferred placement: right after the "View source" button.
   const labels = barA._children.map((c) => c.getAttribute('aria-label'));
   assert.deepStrictEqual(labels, ['Edit', 'View Source', 'Add to Vikunja'], 'button goes after View source');
+
+  // The button renders a theme-aware inline svg mark, not the colored png.
+  const barIcon = buttonsOf(barA)[0]._children[0];
+  assert.deepStrictEqual(buttonsOf(barA)[0]._children.map((c) => c.tag), ['svg'], 'bar button has an inline svg icon');
+  assert.strictEqual(barIcon.getAttribute('viewBox'), '0 0 256 256');
+  assert.strictEqual(barIcon.getAttribute('aria-hidden'), 'true');
+  assert.strictEqual(barIcon._children[0].getAttribute('stroke'), 'currentColor');
+  assert.strictEqual(barIcon._children[1].getAttribute('fill'), 'currentColor');
 
   // A bar that shows "View source" marks the older layout; every such bar
   // gets the button after "View source".
@@ -598,6 +607,10 @@ const menuButtonsOf = () => optionList._children.filter((c) => c.getAttribute('a
     ['Reply', 'View source', 'Add to Vikunja', 'Edit'],
     'menu button goes after View source',
   );
+  const menuIcon = menuButtonsOf2()[0]._children[0];
+  assert.strictEqual(menuIcon.tag, 'svg', 'menu button has an inline svg icon');
+  assert.strictEqual(menuIcon.getAttribute('viewBox'), '0 0 256 256');
+  assert.strictEqual(menuIcon.getAttribute('aria-hidden'), 'true');
 
   // Activating the injected menu item closes the menu, like element-web's own
   // items do: it clicks the menu's invisible background…

@@ -21,11 +21,12 @@
   outline-offset: -2px;
 }
 
-.vikunja-element-add img {
+.vikunja-element-add svg {
   width: 16px;
   height: 16px;
-  display: block;
+  flex: 0 0 auto;
   pointer-events: none;
+  color: var(--cpd-color-icon-secondary, #8d97a5);
 }
 
 .vikunja-element-add.mx_IconizedContextMenu_item {
@@ -34,7 +35,6 @@
   height: auto;
   justify-content: flex-start;
   padding: 12px 16px 12px 12px;
-  gap: 14px;
   border-radius: 0;
   font-size: 14px;
 }
