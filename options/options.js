@@ -23,6 +23,7 @@
   const elementStatusEl = document.getElementById('element-status');
   const elementAddBtn = document.getElementById('element-add');
   const elementCancelBtn = document.getElementById('element-cancel');
+  const elementReactAfterAddInput = document.getElementById('element-react-after-add');
 
   let projects = [];
   let elementInstances = [];
@@ -52,6 +53,7 @@
       customFilter: customFilterInput.value.trim(),
       sortBy: sortByInput.value || 'position',
       rememberLastSort: rememberLastSortInput.checked,
+      elementReactAfterAdd: elementReactAfterAddInput.checked,
     };
   }
 
@@ -85,6 +87,7 @@
     customFilterInput.value = prefs.customFilter;
     sortByInput.value = prefs.sortBy || 'position';
     rememberLastSortInput.checked = prefs.rememberLastSort;
+    elementReactAfterAddInput.checked = Boolean(prefs.elementReactAfterAdd);
     elementInstances = instances;
     renderElementInstances();
     if (config.baseUrl && config.token) {

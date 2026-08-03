@@ -46,6 +46,7 @@ global.chrome = {
   },
   scripting: {
     registered: [],
+    executeCalls: [],
     async registerContentScripts(scripts) { calls.sync.push('register'); this.registered = scripts; },
     async updateContentScripts(scripts) {
       if (this.registered.length === 0) throw new Error('script not registered');
@@ -53,6 +54,7 @@ global.chrome = {
       this.registered = scripts;
     },
     async unregisterContentScripts() { calls.sync.push('unregister'); this.registered = []; },
+    async executeScript(opts) { this.executeCalls.push(opts); return [{ result: { event_id: 'r1' } }]; },
   },
   contextMenus: {
     removeAll: (cb) => cb && cb(),
@@ -84,6 +86,9 @@ eval(bgSrc);
 const delay = (ms) => new Promise((r) => { setTimeout(r, ms); });
 const send = (message, senderUrl) => new Promise((resolve) => {
   listeners.onMessage[0](message, { url: senderUrl }, resolve);
+});
+const sendRaw = (message, sender) => new Promise((resolve) => {
+  listeners.onMessage[0](message, sender, resolve);
 });
 
 (async () => {
@@ -157,6 +162,72 @@ const send = (message, senderUrl) => new Promise((resolve) => {
   res = await send({ type: 'vikunja.create-task', title: '   ' }, 'https://element.example');
   assert.equal(res.ok, false);
   assert.ok(res.error.includes('No message text'), 'empty title rejected, got ' + res.error);
+
+  // --- Reaction (📝) via element-web's own MatrixClient (MAIN world) ---
+
+  // Accepts a request from a registered origin and injects the reaction into
+  // the page's MAIN world with the room/event/emoji.
+  chrome.scripting.executeCalls.length = 0;
+  res = await sendRaw(
+    { type: 'vikunja.matrix-react', roomId: '!abc:server', eventId: '$evt:server', emoji: '📝' },
+    { url: 'https://element.example/#/room/!abc:server', tab: { id: 42 } },
+  );
+  assert.equal(res.ok, true, 'reaction accepted, got ' + JSON.stringify(res));
+  assert.equal(chrome.scripting.executeCalls.length, 1);
+  assert.deepStrictEqual(chrome.scripting.executeCalls[0].target, { tabId: 42 });
+  assert.equal(chrome.scripting.executeCalls[0].world, 'MAIN');
+  assert.deepStrictEqual(chrome.scripting.executeCalls[0].args, ['!abc:server', '$evt:server', '📝']);
+  assert.equal(typeof chrome.scripting.executeCalls[0].func, 'function', 'injected function is provided');
+
+  // The injected function sends the exact m.reaction content the UI's reaction
+  // picker would, and only when element-web is logged in.
+  const sendCalls = [];
+  global.window = {
+    mxMatrixClientPeg: {
+      safeGet: () => ({
+        sendEvent: async (roomId, type, content) => { sendCalls.push({ roomId, type, content }); return { event_id: 'r1' }; },
+      }),
+    },
+  };
+  const fn = chrome.scripting.executeCalls[0].func;
+  const evt = await fn('!abc:server', '$evt:server', '📝');
+  assert.equal(evt.event_id, 'r1');
+  assert.equal(sendCalls.length, 1);
+  assert.equal(sendCalls[0].roomId, '!abc:server');
+  assert.equal(sendCalls[0].type, 'm.reaction');
+  assert.deepStrictEqual(sendCalls[0].content, {
+    'm.relates_to': { rel_type: 'm.annotation', event_id: '$evt:server', key: '📝' },
+  });
+  delete global.window.mxMatrixClientPeg;
+  await assert.rejects(() => fn('!abc:server', '$evt:server', '📝'), 'rejects without a logged-in client');
+  delete global.window;
+
+  // Rejects requests from non-registered origins.
+  res = await sendRaw(
+    { type: 'vikunja.matrix-react', roomId: '!abc:server', eventId: '$evt:server' },
+    { url: 'https://evil.example', tab: { id: 42 } },
+  );
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes('registered Element'), 'origin rejected, got ' + res.error);
+
+  // Rejects when there is no tab to inject into.
+  res = await sendRaw(
+    { type: 'vikunja.matrix-react', roomId: '!abc:server', eventId: '$evt:server' },
+    { url: 'https://element.example' },
+  );
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes('No tab'), 'no-tab rejected, got ' + res.error);
+
+  // Rejects when the scripting API is unavailable (older browsers).
+  const hadScripting = chrome.scripting;
+  delete chrome.scripting;
+  res = await sendRaw(
+    { type: 'vikunja.matrix-react', roomId: '!abc:server', eventId: '$evt:server' },
+    { url: 'https://element.example', tab: { id: 42 } },
+  );
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes('Scripting API'), 'scripting missing surfaced, got ' + res.error);
+  chrome.scripting = hadScripting;
 
   console.log('ELEMENT SMOKE: ALL PASS');
 })().catch((e) => { console.error('FAIL', e); process.exit(1); });

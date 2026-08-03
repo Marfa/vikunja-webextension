@@ -116,6 +116,60 @@
     }
   }
 
+  // Runs in the page's MAIN world via scripting.executeScript so it can reach
+  // element-web's own MatrixClient and send the reaction with the user's
+  // normal session — no tokens and no dependency on element-web's storage
+  // layout. Best-effort: any failure just means no reaction.
+  function matrixReactionFn(roomId, eventId, key) {
+    const peg = typeof window !== 'undefined' && window.mxMatrixClientPeg;
+    const client = peg && typeof peg.safeGet === 'function' ? peg.safeGet() : null;
+    if (!client) {
+      return Promise.reject(new Error('Element is not logged in.'));
+    }
+    return client.sendEvent(roomId, 'm.reaction', {
+      'm.relates_to': { rel_type: 'm.annotation', event_id: eventId, key },
+    });
+  }
+
+  // Mirrors handleCreateTask's origin check: reactions are only accepted from
+  // pages that actually run our Element content script.
+  async function handleMatrixReact(message, sender) {
+    try {
+      let origin = '';
+      try {
+        origin = sender && sender.url ? new URL(sender.url).origin : '';
+      } catch (e) {
+        origin = '';
+      }
+      const patterns = elementInstancePatterns(await getElementInstances());
+      if (!origin || !patterns.includes(`${origin}/*`)) {
+        throw new Error('Request did not come from a registered Element instance.');
+      }
+      if (!api.scripting || typeof api.scripting.executeScript !== 'function') {
+        throw new Error('Scripting API unavailable.');
+      }
+      const tabId = sender && sender.tab && sender.tab.id;
+      if (typeof tabId !== 'number') {
+        throw new Error('No tab to react in.');
+      }
+      const roomId = String(message.roomId || '').trim();
+      const eventId = String(message.eventId || '').trim();
+      const key = String(message.emoji || '📝');
+      if (!roomId || !eventId) {
+        throw new Error('Missing room or event id.');
+      }
+      await api.scripting.executeScript({
+        target: { tabId },
+        world: 'MAIN',
+        func: matrixReactionFn,
+        args: [roomId, eventId, key],
+      });
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  }
+
   api.runtime.onInstalled.addListener(() => {
     createMenus();
     syncContentScripts();
@@ -141,6 +195,10 @@
   api.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message && message.type === 'vikunja.create-task') {
       handleCreateTask(message, sender).then(sendResponse);
+      return true;
+    }
+    if (message && message.type === 'vikunja.matrix-react') {
+      handleMatrixReact(message, sender).then(sendResponse);
       return true;
     }
   });

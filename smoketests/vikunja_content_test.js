@@ -113,11 +113,17 @@ function makeEl(tag, className) {
 const sentMessages = [];
 const mocks = {
   sendMessage: async (msg) => { sentMessages.push(msg); return { ok: true, task: { id: 1 } }; },
+  prefs: { elementReactAfterAdd: false },
 };
 global.chrome = {
   runtime: {
     getURL: (p) => `moz-extension://abc/${p}`,
     sendMessage: (msg) => mocks.sendMessage(msg),
+  },
+  storage: {
+    sync: {
+      get: async (defaults) => ({ ...defaults, ...mocks.prefs }),
+    },
   },
 };
 global.location = { hash: '#/room/!abc:server' };
@@ -185,6 +191,7 @@ function makeMenu() {
 }
 
 const tileA = makeTile('Hello from Element', 'Alice');
+tileA.setAttribute('data-event-id', '$msgA:server');
 const barA = makeBar([tileA], true);
 const tileB = makeTile('Second message', '');
 const barB = makeBar([tileB], false);
@@ -248,8 +255,8 @@ const menuButtonsOf = () => optionList._children.filter((c) => c.getAttribute('a
   assert.equal(sentMessages[0].title, 'Hello from Element');
   assert.equal(
     sentMessages[0].description,
-    'From Test Room by Alice\n\n[View message](https://matrix.to/#/!abc:server)',
-    'description has room, sender and matrix.to permalink',
+    'From Test Room by Alice\n\n[View message](https://matrix.to/#/!abc:server/%24msgA%3Aserver)',
+    'description has room, sender and message-level permalink',
   );
 
   // Message without a sender still works.
@@ -272,7 +279,7 @@ const menuButtonsOf = () => optionList._children.filter((c) => c.getAttribute('a
   assert.equal(sentMessages[2].title, 'Hello from Element', 'menu button uses the tracked tile');
   assert.equal(
     sentMessages[2].description,
-    'From Test Room by Alice\n\n[View message](https://matrix.to/#/!abc:server)',
+    'From Test Room by Alice\n\n[View message](https://matrix.to/#/!abc:server/%24msgA%3Aserver)',
     'menu button description from the tracked tile',
   );
 
@@ -284,6 +291,54 @@ const menuButtonsOf = () => optionList._children.filter((c) => c.getAttribute('a
   assert.ok(toast, 'toast is rendered');
   assert.equal(toast.textContent, 'Vikunja is not configured yet.');
   assert.equal(toast.style.background, '#c0392b');
+
+  const delay = (ms) => new Promise((r) => { setTimeout(r, ms); });
+  mocks.sendMessage = async (msg) => { sentMessages.push(msg); return { ok: true, task: { id: 1 } }; };
+
+  // With the reaction pref off, a successful add sends no reaction request.
+  sentMessages.length = 0;
+  mocks.prefs = { elementReactAfterAdd: false };
+  buttonsOf(barB)[0].listeners.click[0]();
+  await delay(10);
+  assert.equal(sentMessages.length, 1, 'no reaction request when the pref is off');
+  assert.equal(sentMessages[0].type, 'vikunja.create-task');
+
+  // With the pref on and a message-level event id, the background is asked to
+  // react with 📝 after the task was created.
+  sentMessages.length = 0;
+  mocks.prefs = { elementReactAfterAdd: true };
+  buttonsOf(barA)[0].listeners.click[0]();
+  await delay(10);
+  const types = sentMessages.map((m) => m.type);
+  assert.ok(
+    types.includes('vikunja.create-task') && types.includes('vikunja.matrix-react'),
+    'reaction requested after a successful add',
+  );
+  const reaction = sentMessages.find((m) => m.type === 'vikunja.matrix-react');
+  assert.deepStrictEqual(
+    { roomId: reaction.roomId, eventId: reaction.eventId, emoji: reaction.emoji },
+    { roomId: '!abc:server', eventId: '$msgA:server', emoji: '📝' },
+    'reaction carries room, event and emoji',
+  );
+
+  // Without a data-event-id the reaction is skipped, the task is still added.
+  sentMessages.length = 0;
+  mocks.prefs = { elementReactAfterAdd: true };
+  buttonsOf(barB)[0].listeners.click[0]();
+  await delay(10);
+  assert.equal(sentMessages.length, 1, 'no reaction without an event id');
+  assert.equal(sentMessages[0].type, 'vikunja.create-task');
+
+  // A failing reaction never breaks the success toast.
+  sentMessages.length = 0;
+  mocks.sendMessage = async (msg) => {
+    if (msg.type === 'vikunja.matrix-react') throw new Error('executeScript failed');
+    sentMessages.push(msg);
+    return { ok: true, task: { id: 1 } };
+  };
+  buttonsOf(barA)[0].listeners.click[0]();
+  await delay(10);
+  assert.equal(toast.textContent, 'Added to Vikunja.', 'reaction failure does not break the success toast');
 
   console.log('CONTENT SMOKE: ALL PASS');
 })().catch((e) => { console.error('FAIL', e); process.exit(1); });

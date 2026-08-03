@@ -182,15 +182,19 @@
     return el ? cleanText(el.textContent) : '';
   }
 
-  // Best-effort matrix.to link: Element does not expose event IDs in the DOM,
-  // so this is at best room-level. Any future data-event-id attribute is used
-  // when present.
-  function permalink(tile) {
+  function roomIdFromHash() {
     const match = location.hash.match(/\/room\/([^/?]+)/);
-    if (!match) {
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+
+  // Best-effort matrix.to link. Current element-web renders a data-event-id
+  // attribute on message tiles, so the link is message-level when present and
+  // room-level otherwise.
+  function permalink(tile) {
+    const roomId = roomIdFromHash();
+    if (!roomId) {
       return '';
     }
-    const roomId = decodeURIComponent(match[1]);
     const eventId = tile ? tile.getAttribute('data-event-id') : null;
     return eventId ? `https://matrix.to/#/${roomId}/${encodeURIComponent(eventId)}` : `https://matrix.to/#/${roomId}`;
   }
@@ -210,6 +214,28 @@
     return parts.join('\n\n');
   }
 
+  // Best-effort reaction: ask the background to have Element react with 📝 via
+  // its own MatrixClient (injected into the page's MAIN world). Everything here
+  // is optional — a missing pref, event id or room id, or any failure just
+  // skips so the "added to Vikunja" flow is never affected.
+  async function reactWithMemo(tile) {
+    const eventId = tile ? tile.getAttribute('data-event-id') : null;
+    const roomId = roomIdFromHash();
+    if (!eventId || !roomId) {
+      return;
+    }
+    try {
+      await api.runtime.sendMessage({
+        type: 'vikunja.matrix-react',
+        roomId,
+        eventId,
+        emoji: '📝',
+      });
+    } catch (e) {
+      // reaction is best-effort
+    }
+  }
+
   async function addToVikunja(button) {
     const tile = tileOf(button);
     const room = roomName();
@@ -227,6 +253,14 @@
         toast((response && response.error) || 'Could not add task to Vikunja.', true);
       } else {
         toast('Added to Vikunja.');
+        api.storage.sync
+          .get({ elementReactAfterAdd: false })
+          .then((stored) => {
+            if (stored && stored.elementReactAfterAdd) {
+              reactWithMemo(tile);
+            }
+          })
+          .catch(() => {});
       }
     } catch (e) {
       toast(e.message || 'Could not add task to Vikunja.', true);
