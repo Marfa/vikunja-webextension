@@ -84,7 +84,7 @@ function getById(id) {
 }
 
 const storage = new Map();
-const calls = { listTasks: [], createTask: [], completeTask: [], listProjectViews: [], hostChecks: [], hostRequests: [] };
+const calls = { listTasks: [], createTask: [], completeTask: [], listProjectViews: [], hostChecks: [], hostRequests: [], assigneeTask: [] };
 const createdTasks = [];
 const magicCalls = { searchProjectUsers: [], listLabels: [], createLabel: [], addLabelToTask: [] };
 let quickAddModeMock = 'vikunja';
@@ -154,6 +154,10 @@ const VikunjaLib = {
   },
   completeTask: (id, done) => {
     calls.completeTask.push({ id, done });
+    return Promise.resolve();
+  },
+  addAssigneeToTask: (taskId, userId) => {
+    calls.assigneeTask.push({ taskId, userId });
     return Promise.resolve();
   },
   getQuickAddMagicMode: () => Promise.resolve(quickAddModeMock),
@@ -326,7 +330,8 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   await getSubmit()({ preventDefault() {} });
   assert(calls.createTask.length === 4 && calls.createTask[3].projectId === 2, 'todoist #project resolves Home');
   assert(calls.createTask[3].data.title === 'Call Alice', 'todoist assignee cleaned from title, got ' + JSON.stringify(calls.createTask[3].data.title));
-  assert(calls.createTask[3].data.assignees && calls.createTask[3].data.assignees[0].id === 7, 'todoist +assignee resolved to user 7');
+  assert(!calls.createTask[3].data.assignees, 'todoist assignees not in the create body');
+  assert(calls.assigneeTask.length === 1 && calls.assigneeTask[0].taskId === createdTasks[3].id && calls.assigneeTask[0].userId === 7, 'todoist +assignee assigned after create, got ' + JSON.stringify(calls.assigneeTask));
 
   // disabled mode: no magic parsing; only the project chip is shown and its
   // selection becomes the submit project

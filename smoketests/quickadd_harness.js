@@ -248,6 +248,16 @@ for (const c of ['annually', 'biannually', 'semiannually', 'biennially', 'daily'
   eq(parseTaskText(`Lorem Ipsum word${c}notword`).text, `Lorem Ipsum word${c}notword`, `word ${c} text`);
 }
 
+// --- repeatTaskFields: repeat tokens -> v2 repeat_after/repeat_mode ---
+const { repeatTaskFields } = globalThis.QuickAdd;
+eq(repeatTaskFields(null), null, 'repeat null -> null');
+eq(repeatTaskFields({ amount: 0, type: 'days' }), null, 'repeat zero amount -> null');
+eq(repeatTaskFields({ amount: 1, type: 'days' }), { repeat_after: 86400, repeat_mode: 0 }, 'every day -> seconds');
+eq(repeatTaskFields({ amount: 3, type: 'weeks' }), { repeat_after: 1814400, repeat_mode: 0 }, 'every 3 weeks -> seconds');
+eq(repeatTaskFields({ amount: 2, type: 'hours' }), { repeat_after: 7200, repeat_mode: 0 }, 'every 2 hours -> seconds');
+eq(repeatTaskFields({ amount: 4, type: 'years' }), { repeat_after: 126144000, repeat_mode: 0 }, 'every 4 years -> seconds');
+eq(repeatTaskFields({ amount: 2, type: 'months' }), { repeat_after: 0, repeat_mode: 1 }, 'every N months -> monthly mode');
+
 // --- getDayFromText past-date edge cases (fixed now) ---
 const jan = new Date(2022, 0, 15);
 let r = parseTaskText(`Lorem Ipsum ${jan.getDate() - 1}th`, PrefixMode.Default, jan);

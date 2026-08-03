@@ -15,6 +15,7 @@
     listLabels,
     createLabel,
     addLabelToTask,
+    addAssigneeToTask,
     buildTaskContent,
     getActiveTab,
     openCapture,
@@ -24,7 +25,7 @@
     requestHostPermissions,
   } = window.VikunjaLib;
 
-  const { parseTaskText, PrefixMode, PREFIXES, cleanupItemText, analyzeTaskText, removeSpan } = window.QuickAdd;
+  const { parseTaskText, PrefixMode, PREFIXES, cleanupItemText, analyzeTaskText, removeSpan, repeatTaskFields } = window.QuickAdd;
   const { openOptions: uiOpenOptions, showToast: uiShowToast } = window.UiLib;
 
   const configPrompt = document.getElementById('config-prompt');
@@ -885,17 +886,18 @@
       if (parsed.priority !== null) {
         body.priority = parsed.priority;
       }
-      if (Array.isArray(parsed.assignees) && parsed.assignees.length > 0) {
-        body.assignees = assignees.map((a) => ({ id: a.id }));
-      }
-      if (parsed.repeats !== null) {
-        body.repeat_after = { amount: parsed.repeats.amount, type: parsed.repeats.type };
-        if (parsed.repeats.type === 'months' && parsed.repeats.amount === 1) {
-          body.repeat_mode = 1;
-        }
+      const repeatFields = repeatTaskFields(parsed.repeats);
+      if (repeatFields) {
+        body.repeat_after = repeatFields.repeat_after;
+        body.repeat_mode = repeatFields.repeat_mode;
       }
 
       const created = await createTask(projectId, body);
+      // Assignees are set after creation: the v2 create body does not accept
+      // them (read-only), they go to their own sub-resource.
+      for (const user of assignees) {
+        await addAssigneeToTask(created.id, user.id);
+      }
       await addLabelsToTask(created.id, parsed.labels);
       uiShowToast(toastEl, 'Task added.');
       quickTitle.value = '';
