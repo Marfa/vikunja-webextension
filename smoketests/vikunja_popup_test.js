@@ -217,6 +217,7 @@ global.document = {
   getElementById: getById,
   createElement: (tag) => fakeElement(`<${tag}>`),
   createElementNS: (ns, tag) => fakeElement(`<svg:${tag}>`),
+  createTextNode: (text) => ({ textContent: String(text) }),
 };
 
 global.window.VikunjaLib = VikunjaLib;
@@ -300,6 +301,8 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   await getSubmit()({ preventDefault() {} });
   assert(calls.createTask.length === 1 && calls.createTask[0].data.title === 'Water plants', 'createTask called for quick add');
   assert(calls.createTask[0].projectId === 1, 'no magic project -> first project default');
+  const toastLink = ids['toast'].childNodes.find((c) => c.textContent === '103');
+  assert(toastLink && toastLink.href === 'https://try.vikunja.io/tasks/103', 'success toast links to the new task, got ' + (toastLink && toastLink.href));
   assert(ids['task-list'].childNodes.length === 3, 'task list re-fetches after add (shows new task), got ' + ids['task-list'].childNodes.length);
   assert(ids['task-list'].childNodes[2].classList.contains('task--new'), 'new task row animated in');
   assert(storage.get('lastProjectId') === 1, 'lastProjectId persisted');

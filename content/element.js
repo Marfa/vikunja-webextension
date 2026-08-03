@@ -14,13 +14,25 @@
   let toastTimer = null;
   let lastTile = null;
 
-  function toast(message, isError) {
+  function toast(message, isError, link) {
     if (!toastEl) {
       toastEl = document.createElement('div');
       toastEl.className = 'vikunja-element-toast';
       document.body.appendChild(toastEl);
     }
-    toastEl.textContent = message;
+    toastEl.textContent = '';
+    if (link && link.href) {
+      toastEl.appendChild(document.createTextNode('Task '));
+      const anchor = document.createElement('a');
+      anchor.href = link.href;
+      anchor.target = '_blank';
+      anchor.rel = 'noopener';
+      anchor.textContent = String(link.id);
+      toastEl.appendChild(anchor);
+      toastEl.appendChild(document.createTextNode(' added'));
+    } else {
+      toastEl.textContent = message;
+    }
     toastEl.style.background = isError ? '#c0392b' : '#0d9488';
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => {
@@ -28,7 +40,7 @@
         toastEl.parentNode.removeChild(toastEl);
       }
       toastEl = null;
-    }, 2500);
+    }, link && link.href ? 4000 : 2500);
   }
 
   function cleanText(value) {
@@ -415,7 +427,10 @@
       if (!response || response.ok !== true) {
         toast((response && response.error) || 'Could not add task to Vikunja.', true);
       } else {
-        toast('Added to Vikunja.');
+        const link = response.task && response.task.id && response.url
+          ? { id: response.task.id, href: response.url }
+          : null;
+        toast('Task added.', false, link);
         api.storage.sync
           .get({ elementReactAfterAdd: false })
           .then((stored) => {

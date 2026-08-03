@@ -10,6 +10,7 @@
     buildTaskContent,
     getActiveTab,
     openCapture,
+    getConfig,
     getElementInstances,
     elementInstancePatterns,
     getPrefs,
@@ -141,6 +142,10 @@
         body.due_date = dueTodayISO();
       }
       const task = await createTask(projectId, body);
+      // The content script cannot know the Vikunja base URL, so hand it the
+      // link to the freshly created task for its success toast.
+      const config = await getConfig();
+      const url = config && config.baseUrl ? `${config.baseUrl}/tasks/${task.id}` : '';
       // Auto-assign the configured tag. Best-effort like the popup: a missing
       // label permission must never break the add itself.
       const tag = String(prefs.elementTag || '').trim();
@@ -154,7 +159,7 @@
           // Skip tag assignment on any failure; the task was already created.
         }
       }
-      return { ok: true, task };
+      return { ok: true, task, url };
     } catch (e) {
       return { ok: false, error: e.message };
     }

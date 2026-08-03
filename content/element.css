@@ -60,3 +60,10 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
   pointer-events: none;
 }
+
+.vikunja-element-toast a {
+  color: #fff;
+  font-weight: 700;
+  text-decoration: underline;
+  pointer-events: auto;
+}

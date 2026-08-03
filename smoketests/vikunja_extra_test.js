@@ -88,6 +88,7 @@ global.document = {
   getElementById: getById,
   createElement: (tag) => fakeElement(`<${tag}>`),
   createElementNS: (ns, tag) => fakeElement(`<svg:${tag}>`),
+  createTextNode: (text) => ({ textContent: String(text) }),
 };
 global.location = { search: '?title=Found%20bug&description=On%20page&url=https%3A%2F%2Fexample.com' };
 global.URLSearchParams = URLSearchParams;
@@ -143,6 +144,8 @@ const root = path.join(__dirname, '..');
   assert(calls.createTask.length === 1 && calls.createTask[0].projectId === '1', 'capture: createTask called');
   assert(calls.createTask[0].body.title === 'Found bug', 'capture: body title');
   assert(calls.createTask[0].body.due_date === '2026-08-02T21:00:00Z', 'capture: due today set');
+  const captureToastLink = ids['toast'].childNodes.find((c) => c.textContent === '1');
+  assert(captureToastLink && captureToastLink.href === 'https://try.vikunja.io/tasks/1', 'capture: success toast links to the new task, got ' + (captureToastLink && captureToastLink.href));
 
   VikunjaLib.getPrefs = () => Promise.resolve({ defaultProjectId: null, dueToday: false, customFilter: '' });
   eval(fs.readFileSync(path.join(root, 'capture/capture.js'), 'utf8'));

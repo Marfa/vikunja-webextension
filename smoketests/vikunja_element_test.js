@@ -164,6 +164,7 @@ const sendRaw = (message, sender) => new Promise((resolve) => {
   let res = await send({ type: 'vikunja.create-task', title: '  Hello   world  ', description: 'From Room by Alice' }, 'https://element.example/#/room/!abc:server');
   assert.equal(res.ok, true, 'expected task to be created, got ' + JSON.stringify(res));
   assert.equal(res.task.title, 'Hello world', 'title is trimmed and collapsed');
+  assert.equal(res.url, 'https://vikunja.example/tasks/5', 'create response carries the task url');
   assert.equal(calls.createTask.length, 1);
   assert.equal(calls.createTask[0].projectId, '1', 'defaults to the first project');
   assert.equal(calls.createTask[0].body.description, 'From Room by Alice');

@@ -846,7 +846,7 @@
           body.due_date = dueTodayISO();
         }
         const created = await createTask(currentProjectId, body);
-        uiShowToast(toastEl, 'Task added.');
+        uiShowToast(toastEl, 'Task added.', { link: { id: created.id, href: `${baseUrl}/tasks/${created.id}` } });
         quickTitle.value = '';
         renderChips();
         await refreshTasks();
@@ -899,7 +899,7 @@
         await addAssigneeToTask(created.id, user.id);
       }
       await addLabelsToTask(created.id, parsed.labels);
-      uiShowToast(toastEl, 'Task added.');
+      uiShowToast(toastEl, 'Task added.', { link: { id: created.id, href: `${baseUrl}/tasks/${created.id}` } });
       quickTitle.value = '';
       await api.storage.local.set({ lastProjectId: projectId });
       currentProjectId = projectId;

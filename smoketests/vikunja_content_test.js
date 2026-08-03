@@ -100,7 +100,10 @@ function makeEl(tag, className) {
       if (this._text !== '') return this._text;
       return this._children.map((c) => c.textContent).join('');
     },
-    set(v) { this._text = String(v); },
+    set(v) {
+      this._text = String(v);
+      if (!this._text) this._children = [];
+    },
   });
   el.appendChild = (c) => { c.parentNode = el; el._children.push(c); return c; };
   el.removeChild = (c) => {
@@ -145,7 +148,7 @@ function makeEl(tag, className) {
 
 const sentMessages = [];
 const mocks = {
-  sendMessage: async (msg) => { sentMessages.push(msg); return { ok: true, task: { id: 1 } }; },
+  sendMessage: async (msg) => { sentMessages.push(msg); return { ok: true, task: { id: 1 }, url: 'https://vikunja.example/tasks/1' }; },
   prefs: { elementReactAfterAdd: false },
 };
 global.chrome = {
@@ -299,6 +302,7 @@ global.document = {
   body,
   documentElement: body,
   createElement: (tag) => makeEl(tag),
+  createTextNode: (text) => { const n = makeEl('#text'); n.textContent = text; return n; },
   querySelectorAll: (sel) => queryAll(doc, sel),
   querySelector: (sel) => queryAll(doc, sel)[0] || null,
   addEventListener: (type, fn) => { (doc.listeners[type] = doc.listeners[type] || []).push(fn); },
@@ -460,12 +464,14 @@ const menuButtonsOf = () => optionList._children.filter((c) => c.getAttribute('a
   mocks.sendMessage = async (msg) => {
     if (msg.type === 'vikunja.matrix-react') throw new Error('executeScript failed');
     sentMessages.push(msg);
-    return { ok: true, task: { id: 1 } };
+    return { ok: true, task: { id: 1 }, url: 'https://vikunja.example/tasks/1' };
   };
   buttonsOf(barA)[0].listeners.click[0]();
   await delay(10);
-  assert.equal(toast.textContent, 'Added to Vikunja.', 'reaction failure does not break the success toast');
-  mocks.sendMessage = async (msg) => { sentMessages.push(msg); return { ok: true, task: { id: 1 } }; };
+  assert.equal(toast.textContent, 'Task 1 added', 'reaction failure does not break the success toast');
+  const toastLink = toast._children[1];
+  assert.equal(toastLink.href, 'https://vikunja.example/tasks/1', 'success toast links to the new task');
+  mocks.sendMessage = async (msg) => { sentMessages.push(msg); return { ok: true, task: { id: 1 }, url: 'https://vikunja.example/tasks/1' }; };
 
   // Path-based routing (useHashRouting: false) still yields the room id — from
   // the pathname — for both the permalink and the reaction.

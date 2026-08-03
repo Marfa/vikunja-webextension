@@ -35,6 +35,8 @@
     url: params.get('url') || '',
   };
 
+  let baseUrl = '';
+
   function setError(message) {
     errorEl.textContent = message || '';
     errorEl.hidden = !message;
@@ -50,7 +52,7 @@
 
   async function init() {
     const config = await getConfig();
-    const { baseUrl } = config;
+    baseUrl = config.baseUrl;
     if (!baseUrl) {
       configMsg.textContent = 'Vikunja is not configured yet.';
       configPrompt.hidden = false;
@@ -110,9 +112,11 @@
       if (dueTodayInput.checked) {
         body.due_date = dueTodayISO();
       }
-      await createTask(projectSelect.value, body);
-      uiShowToast(toastEl, 'Task added to Vikunja.');
-      setTimeout(() => window.close(), 1200);
+      const created = await createTask(projectSelect.value, body);
+      uiShowToast(toastEl, 'Task added.', {
+        link: { id: created.id, href: `${baseUrl}/tasks/${created.id}` },
+      });
+      setTimeout(() => window.close(), 4000);
     } catch (err) {
       setError(err.message);
     } finally {
