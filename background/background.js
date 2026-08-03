@@ -41,6 +41,34 @@
     });
   }
 
+  // Dynamically registered content scripts only run on pages loaded after the
+  // registration. When the extension is reloaded or updated, the instance that
+  // ran in an already-open Element tab is killed, so re-inject the content
+  // script (and its CSS) into those tabs from here. The script's own startup
+  // sweep removes the stale buttons and markers of the previous instance, so
+  // re-running it is idempotent.
+  const reinjectedTabs = new Set();
+  async function reinjectIntoOpenTabs(patterns) {
+    if (!api.tabs || !api.scripting || patterns.length === 0) {
+      return;
+    }
+    let tabs = [];
+    try {
+      tabs = await api.tabs.query({ url: patterns });
+    } catch (e) {
+      return;
+    }
+    for (const tab of tabs) {
+      if (typeof tab.id !== 'number' || reinjectedTabs.has(tab.id)) {
+        continue;
+      }
+      reinjectedTabs.add(tab.id);
+      const target = { tabId: tab.id, allFrames: true };
+      await api.scripting.executeScript({ target, files: ['content/element.js'] }).catch(() => {});
+      await api.scripting.insertCSS({ target, files: ['content/element.css'] }).catch(() => {});
+    }
+  }
+
   // Keep the dynamically registered Matrix Element content script in sync with
   // the stored instances. Registering requires both the "scripting" permission
   // and host permission for the target origin; the options page requests the
@@ -67,6 +95,7 @@
         await api.scripting.unregisterContentScripts({ ids: [ELEMENT_SCRIPT_ID] }).catch(() => {});
         await api.scripting.registerContentScripts([script]);
       }
+      await reinjectIntoOpenTabs(patterns);
     } catch (e) {
       console.error('Could not sync Element content script:', e);
     }

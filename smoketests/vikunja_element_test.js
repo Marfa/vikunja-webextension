@@ -48,6 +48,7 @@ global.chrome = {
   scripting: {
     registered: [],
     executeCalls: [],
+    cssCalls: [],
     async registerContentScripts(scripts) { calls.sync.push('register'); this.registered = scripts; },
     async updateContentScripts(scripts) {
       if (this.registered.length === 0) throw new Error('script not registered');
@@ -56,6 +57,7 @@ global.chrome = {
     },
     async unregisterContentScripts() { calls.sync.push('unregister'); this.registered = []; },
     async executeScript(opts) { this.executeCalls.push(opts); return [{ result: { event_id: 'r1' } }]; },
+    async insertCSS(opts) { this.cssCalls.push(opts); },
   },
   contextMenus: {
     removeAll: (cb) => cb && cb(),
@@ -63,7 +65,7 @@ global.chrome = {
     onClicked: { addListener: (fn) => listeners.onClicked.push(fn) },
   },
   commands: { onCommand: { addListener: (fn) => listeners.onCommand.push(fn) } },
-  tabs: { query: async () => [] },
+  tabs: { query: async () => [{ id: 1, url: 'https://element.example/' }] },
   windows: { create: (d) => d },
 };
 
@@ -122,12 +124,28 @@ const sendRaw = (message, sender) => new Promise((resolve) => {
   assert.deepStrictEqual(registered.js, ['content/element.js']);
   assert.deepStrictEqual(registered.css, ['content/element.css']);
 
+  // The script is also re-injected into tabs that were already open when the
+  // extension was (re)loaded, so the buttons survive a reload without
+  // reloading Element. The per-session guard prevents re-injecting the same
+  // tab again.
+  assert.equal(chrome.scripting.executeCalls.length, 1, 'content script re-injected into the open tab');
+  assert.deepStrictEqual(
+    chrome.scripting.executeCalls[0],
+    { target: { tabId: 1, allFrames: true }, files: ['content/element.js'] },
+  );
+  assert.deepStrictEqual(
+    chrome.scripting.cssCalls,
+    [{ target: { tabId: 1, allFrames: true }, files: ['content/element.css'] }],
+    'element css re-applied alongside the re-injection',
+  );
+
   // Storage change for a different instance updates the scripts in place.
   store.elementInstances = [{ url: 'https://app.element.io' }];
   listeners.onChanged[0]({ elementInstances: { newValue: store.elementInstances } }, 'sync');
   await delay(10);
   assert.deepStrictEqual(calls.sync, ['unregister', 'register', 'update'], 'storage change updates the content script');
   assert.deepStrictEqual(chrome.scripting.registered[0].matches, ['https://app.element.io/*']);
+  assert.equal(chrome.scripting.executeCalls.length, 1, 'open tab is not re-injected a second time');
 
   // Empty list unregisters the script again.
   store.elementInstances = [];

@@ -4,8 +4,9 @@ const path = require('path');
 const assert = require('assert');
 const src = fs.readFileSync(path.join(__dirname, '..', 'content/element.js'), 'utf8');
 
+const observerCallbacks = [];
 class FakeMutationObserver {
-  constructor(cb) { this.cb = cb; }
+  constructor(cb) { observerCallbacks.push(cb); }
   observe() {}
   disconnect() {}
 }
@@ -62,6 +63,13 @@ function queryAll(root, selector) {
   return out;
 }
 
+// Real DOM datasets are backed by data-* attributes (setting
+// dataset.vikunjaInjected writes data-vikunja-injected); mirror that so the
+// content script's attribute cleanup behaves like it does in a browser.
+function datasetKey(prop) {
+  return 'data-' + String(prop).replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+}
+
 function makeEl(tag, className) {
   const el = {
     tag,
@@ -69,13 +77,24 @@ function makeEl(tag, className) {
     _children: [],
     _attrs: {},
     _text: '',
-    dataset: {},
     style: {},
     listeners: {},
     parentNode: null,
     title: '',
     hidden: false,
   };
+  Object.defineProperty(el, 'dataset', {
+    get() {
+      return new Proxy({}, {
+        get: (_target, prop) => {
+          const key = datasetKey(prop);
+          return key in el._attrs ? el._attrs[key] : undefined;
+        },
+        set: (_target, prop, value) => { el._attrs[datasetKey(prop)] = String(value); return true; },
+      });
+    },
+  });
+  el.remove = () => { if (el.parentNode) el.parentNode.removeChild(el); };
   Object.defineProperty(el, 'textContent', {
     get() {
       if (this._text !== '') return this._text;
@@ -98,6 +117,7 @@ function makeEl(tag, className) {
   };
   el.setAttribute = (k, v) => { el._attrs[k] = String(v); };
   el.getAttribute = (k) => (k in el._attrs ? el._attrs[k] : null);
+  el.removeAttribute = (k) => { delete el._attrs[k]; };
   el.querySelectorAll = (sel) => queryAll(el, sel);
   el.querySelector = (sel) => queryAll(el, sel)[0] || null;
   el.closest = (sel) => {
@@ -207,7 +227,9 @@ const tileA = makeTile('Hello from Element', 'Alice');
 tileA.setAttribute('data-event-id', '$msgA:server');
 const barA = makeBar([tileA], true);
 const tileB = makeTile('Second message', '');
-const barB = makeBar([tileB], false);
+const barB = makeBar([tileB], true);
+const tileEdit = makeTile('Own message', 'Me');
+const barEditOnly = makeBar([tileEdit], false);
 const barC = makeBar([], false, { noEdit: true });
 const kebab = makeEl('span', 'mx_MessageActionBar_kebab');
 kebab.setAttribute('role', 'button');
@@ -261,23 +283,15 @@ const tileMultiline = makeRichTile([
   richEl('', null, 'Line two'),
 ], 'Alice');
 const barMultiline = makeBar([tileMultiline], true);
-const menu = makeMenu();
 body.appendChild(tileA);
 body.appendChild(tileB);
 body.appendChild(barC);
+body.appendChild(tileEdit);
 body.appendChild(tileLong);
-// Real element-web renders the menu inside a portal wrapper with an invisible
-// background; both are exercised by the menu-close behaviour.
-const menuWrapper = makeEl('div', 'mx_ContextualMenu_wrapper');
-const menuBackground = makeEl('div', 'mx_ContextualMenu_background');
-menuWrapper.appendChild(menuBackground);
-menuWrapper.appendChild(menu);
-body.appendChild(menuWrapper);
-// A second menu without a background exercises the Escape fallback.
-const escapeWrapper = makeEl('div', 'mx_ContextualMenu_wrapper');
-const escapeMenu = makeMenu();
-escapeWrapper.appendChild(escapeMenu);
-body.appendChild(escapeWrapper);
+// A plain context menu asserts that the bar layout leaves it alone; the
+// default menu layout (with portal wrapper and background) is exercised later.
+const menu = makeMenu();
+body.appendChild(menu);
 body.appendChild(tileRich);
 body.appendChild(tileMultiline);
 
@@ -301,49 +315,34 @@ const menuButtonsOf = () => optionList._children.filter((c) => c.getAttribute('a
   const labels = barA._children.map((c) => c.getAttribute('aria-label'));
   assert.deepStrictEqual(labels, ['Edit', 'View Source', 'Add to Vikunja'], 'button goes after View source');
 
-  // Fallback placement: next to the Edit button.
+  // A bar that shows "View source" marks the older layout; every such bar
+  // gets the button after "View source".
   const labelsB = barB._children.map((c) => c.getAttribute('aria-label'));
-  assert.deepStrictEqual(labelsB, ['Edit', 'Add to Vikunja'], 'button goes after Edit when no View source');
+  assert.deepStrictEqual(labelsB, ['Edit', 'View Source', 'Add to Vikunja'], 'button goes after View source');
 
-  // A bar without View source or Edit never gets a trailing button (that
-  // would land after the ⋯ menu); the item lives in the options menu instead.
+  // A bar without a "View source" anchor never gets a button — no trailing
+  // append and no "Edit" fallback. Current element-web's own-message bars
+  // (Edit, no "View source") therefore leave the button to the options menu.
   assert.deepStrictEqual(buttonsOf(barC), [], 'no button appended to a bare action bar');
+  assert.deepStrictEqual(buttonsOf(barEditOnly), [], 'no bar button without a View source anchor');
 
-  // The options menu gets the button directly after the "View source" item.
+  // The options menu does not get the button in this (bar) layout.
   const menuLabels = optionList._children.map((c) => c.textContent.trim());
   assert.deepStrictEqual(
     menuLabels,
-    ['Reply', 'View source', 'Add to Vikunja', 'Edit'],
-    'menu button goes after View source',
+    ['Reply', 'View source', 'Edit'],
+    'no menu button in the bar layout',
   );
 
-  // Re-running scan must not duplicate the button.
+  // Re-running the content script (extension reload/update) must not
+  // duplicate the button: the new instance sweeps away the stale buttons and
+  // markers of the previous one, then re-injects fresh.
+  doc.listeners = {};
+  observerCallbacks.length = 0;
   eval(src);
   assert.equal(buttonsOf(barA).length, 1, 'no duplicate injection on re-scan');
-  assert.equal(buttonsOf(barB).length, 1, 'no duplicate injection on re-scan (fallback bar)');
-  assert.equal(menuButtonsOf().length, 1, 'no duplicate injection in the options menu');
-
-  // Activating the injected menu item closes the menu, like element-web's own
-  // items do: it clicks the menu's invisible background…
-  let backgroundClicks = 0;
-  menuBackground.addEventListener('click', () => { backgroundClicks += 1; });
-  menuButtonsOf()[0].listeners.click[0]();
-  assert.equal(backgroundClicks, 1, 'menu background clicked to close it');
-
-  // …and a menu without a background gets an Escape keydown through its wrapper.
-  const escapeMenuButton = escapeMenu._children[0]._children
-    .filter((c) => c.getAttribute('aria-label') === 'Add to Vikunja')[0];
-  let escapeCount = 0;
-  escapeWrapper.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') escapeCount += 1;
-  });
-  escapeMenuButton.listeners.click[0]();
-  assert.equal(escapeCount, 1, 'Escape keydown dispatched to close a background-less menu');
-
-  // Action-bar buttons are not inside a menu wrapper, so nothing is closed.
-  const before = backgroundClicks;
-  buttonsOf(barA)[0].listeners.click[0]();
-  assert.equal(backgroundClicks, before, 'action-bar clicks do not touch the menu background');
+  assert.equal(buttonsOf(barB).length, 1, 'no duplicate injection on re-scan');
+  assert.equal(menuButtonsOf().length, 0, 'no menu button in the bar layout after re-scan');
 
   await new Promise((r) => { setTimeout(r, 10); });
   sentMessages.length = 0;
@@ -371,27 +370,14 @@ const menuButtonsOf = () => optionList._children.filter((c) => c.getAttribute('a
     'room-level permalink used without a sender',
   );
 
-  // The menu button has no DOM link to its message (portal), so it uses the
-  // most recently hovered/clicked event tile.
-  doc.listeners.click[0]({ target: tileA });
-  menuButtonsOf()[0].listeners.click[0]();
-  await new Promise((r) => { setTimeout(r, 10); });
-  assert.equal(sentMessages.length, 3);
-  assert.equal(sentMessages[2].title, 'Test Room: Hello from Element', 'menu button uses the tracked tile');
-  assert.equal(
-    sentMessages[2].description,
-    'Hello from Element\n\n[View message](https://matrix.to/#/!abc:server/%24msgA%3Aserver)',
-    'menu button description from the tracked tile',
-  );
-
   // A message longer than 50 characters is truncated in the title; the full
   // message stays in the description.
   buttonsOf(barLong)[0].listeners.click[0]();
   await new Promise((r) => { setTimeout(r, 10); });
-  assert.equal(sentMessages.length, 4);
-  assert.equal(sentMessages[3].title, `Test Room: ${longBody.slice(0, 50)}…`, 'title truncates the message at 50 chars');
+  assert.equal(sentMessages.length, 3);
+  assert.equal(sentMessages[2].title, `Test Room: ${longBody.slice(0, 50)}…`, 'title truncates the message at 50 chars');
   assert.equal(
-    sentMessages[3].description,
+    sentMessages[2].description,
     `${longBody}\n\n[View message](https://matrix.to/#/!abc:server)`,
     'description keeps the full message',
   );
@@ -400,14 +386,14 @@ const menuButtonsOf = () => optionList._children.filter((c) => c.getAttribute('a
   // stays plain text.
   buttonsOf(barRich)[0].listeners.click[0]();
   await new Promise((r) => { setTimeout(r, 10); });
-  assert.equal(sentMessages.length, 5);
+  assert.equal(sentMessages.length, 4);
   assert.equal(
-    sentMessages[4].title,
+    sentMessages[3].title,
     'Test Room: Hi bold and italic and link and inline()',
     'title strips markup',
   );
   assert.equal(
-    sentMessages[4].description,
+    sentMessages[3].description,
     'Hi **bold** and *italic* and [link](https://example.com/page) and `inline()`\n\n'
       + '[View message](https://matrix.to/#/!abc:server/%24msgR%3Aserver)',
     'description converts HTML to Markdown',
@@ -416,9 +402,9 @@ const menuButtonsOf = () => optionList._children.filter((c) => c.getAttribute('a
   // <br> becomes a newline in the description.
   buttonsOf(barMultiline)[0].listeners.click[0]();
   await new Promise((r) => { setTimeout(r, 10); });
-  assert.equal(sentMessages.length, 6);
+  assert.equal(sentMessages.length, 5);
   assert.equal(
-    sentMessages[5].description,
+    sentMessages[4].description,
     'Line one\nLine two\n\n[View message](https://matrix.to/#/!abc:server)',
     'line breaks survive into the description',
   );
@@ -565,6 +551,98 @@ const menuButtonsOf = () => optionList._children.filter((c) => c.getAttribute('a
     'no room name when the fallback fails',
   );
   mocks.sendMessage = async (msg) => { sentMessages.push(msg); return { ok: true, task: { id: 1 } }; };
+
+  // --- Menu layout (the default) ---
+  // Current element-web keeps the per-message action in the options menu and
+  // its hover action bars have no "View source" anchor (only "Edit" on own
+  // messages). On such a page the button must live in the menu and nowhere
+  // else. A fresh page is set up and the content script run again, which
+  // re-decides the layout from the DOM.
+  body._children = [];
+  const header2 = makeEl('h1', 'mx_RoomHeader_nametext');
+  header2.textContent = 'Test Room';
+  body.appendChild(header2);
+  const tileM = makeTile('Hello from Element', 'Alice');
+  tileM.setAttribute('data-event-id', '$msgM:server');
+  const barM = makeBar([tileM], false);
+  const tileMN = makeTile('Second message', '');
+  const barMN = makeBar([tileMN], false);
+  const tileMBare = makeTile('Third message', '');
+  const barMBare = makeBar([tileMBare], false, { noEdit: true });
+  const menu2 = makeMenu();
+  const menuWrapper2 = makeEl('div', 'mx_ContextualMenu_wrapper');
+  const menuBackground2 = makeEl('div', 'mx_ContextualMenu_background');
+  menuWrapper2.appendChild(menuBackground2);
+  menuWrapper2.appendChild(menu2);
+  body.appendChild(menuWrapper2);
+  const escapeWrapper2 = makeEl('div', 'mx_ContextualMenu_wrapper');
+  const escapeMenu2 = makeMenu();
+  escapeWrapper2.appendChild(escapeMenu2);
+  body.appendChild(escapeWrapper2);
+  doc.listeners = {};
+  observerCallbacks.length = 0;
+  eval(src);
+
+  const menuButtonsOf2 = () => queryAll(doc, '.mx_MessageContextMenu .vikunja-element-add');
+  assert.deepStrictEqual(buttonsOf(barM), [], 'no bar button in the menu layout');
+  assert.deepStrictEqual(buttonsOf(barMN), [], 'no bar button for a message without an anchor');
+  assert.deepStrictEqual(buttonsOf(barMBare), [], 'no bar button for a bare action bar');
+  assert.deepStrictEqual(
+    menu2._children[0]._children.map((c) => c.textContent.trim()),
+    ['Reply', 'View source', 'Add to Vikunja', 'Edit'],
+    'menu button goes after View source',
+  );
+
+  // Activating the injected menu item closes the menu, like element-web's own
+  // items do: it clicks the menu's invisible background…
+  let backgroundClicks = 0;
+  menuBackground2.addEventListener('click', () => { backgroundClicks += 1; });
+  menuButtonsOf2()[0].listeners.click[0]();
+  assert.equal(backgroundClicks, 1, 'menu background clicked to close it');
+
+  // …and a menu without a background gets an Escape keydown through its wrapper.
+  const escapeMenuButton = escapeMenu2._children[0]._children
+    .filter((c) => c.getAttribute('aria-label') === 'Add to Vikunja')[0];
+  let escapeCount = 0;
+  escapeWrapper2.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') escapeCount += 1;
+  });
+  escapeMenuButton.listeners.click[0]();
+  assert.equal(escapeCount, 1, 'Escape keydown dispatched to close a background-less menu');
+
+  // The menu button has no DOM link to its message (portal), so it uses the
+  // most recently hovered/clicked event tile.
+  sentMessages.length = 0;
+  mocks.prefs = { elementReactAfterAdd: false };
+  doc.listeners.click[0]({ target: tileM });
+  menuButtonsOf2()[0].listeners.click[0]();
+  await delay(10);
+  assert.equal(sentMessages.length, 1);
+  assert.equal(sentMessages[0].type, 'vikunja.create-task');
+  assert.equal(sentMessages[0].title, 'Test Room: Hello from Element', 'menu button uses the tracked tile');
+  assert.equal(
+    sentMessages[0].description,
+    'Hello from Element\n\n[View message](https://matrix.to/#/!abc:server/%24msgM%3Aserver)',
+    'menu button description from the tracked tile',
+  );
+
+  // The reaction pref works from the menu too.
+  sentMessages.length = 0;
+  mocks.prefs = { elementReactAfterAdd: true };
+  doc.listeners.click[0]({ target: tileM });
+  menuButtonsOf2()[0].listeners.click[0]();
+  await delay(10);
+  const menuTypes = sentMessages.map((m) => m.type);
+  assert.ok(
+    menuTypes.includes('vikunja.create-task') && menuTypes.includes('vikunja.matrix-react'),
+    'reaction requested from the menu button',
+  );
+  const menuReaction = sentMessages.find((m) => m.type === 'vikunja.matrix-react');
+  assert.deepStrictEqual(
+    { roomId: menuReaction.roomId, eventId: menuReaction.eventId, emoji: menuReaction.emoji },
+    { roomId: '!abc:server', eventId: '$msgM:server', emoji: '📝' },
+    'menu reaction carries room, event and emoji',
+  );
 
   console.log('CONTENT SMOKE: ALL PASS');
 })().catch((e) => { console.error('FAIL', e); process.exit(1); });

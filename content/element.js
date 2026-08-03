@@ -126,17 +126,32 @@
     }
   }
 
+  // The per-message action either lives in the hover action bar (older
+  // element-web versions that show a "View source" button there) or in the
+  // per-message options menu (current versions — the default). Decide once
+  // per page so a message never ends up with a button in both places.
+  let barLayout = null;
+  function scan() {
+    if (barLayout === null) {
+      const bar = document.querySelector(BAR_SELECTOR);
+      barLayout = !!(bar && findItem(bar, VIEW_SOURCE_LABELS));
+    }
+    if (barLayout) {
+      document.querySelectorAll(BAR_SELECTOR).forEach(inject);
+    } else {
+      document.querySelectorAll(MENU_SELECTOR).forEach(injectMenu);
+    }
+  }
+
   // Action bars: the button is only placed when the bar itself shows a "View
-  // source" or "Edit" button. It is never appended to the end of the bar —
-  // that lands after the ⋯ menu; those element-web versions keep the item in
-  // the options menu (injectMenu) instead.
+  // source" button, which marks the older layout. It is never appended to the
+  // end of the bar — that lands after the ⋯ menu.
   function inject(bar) {
     if (bar.dataset.vikunjaInjected === 'true') {
       return;
     }
     const button = createButton(bar);
-    if (insertAfterLabel(bar, button, VIEW_SOURCE_LABELS)
-      || insertAfterLabel(bar, button, EDIT_LABELS)) {
+    if (insertAfterLabel(bar, button, VIEW_SOURCE_LABELS)) {
       bar.dataset.vikunjaInjected = 'true';
     }
   }
@@ -157,11 +172,6 @@
       menu.appendChild(button);
     }
     menu.dataset.vikunjaInjected = 'true';
-  }
-
-  function scan() {
-    document.querySelectorAll(BAR_SELECTOR).forEach(inject);
-    document.querySelectorAll(MENU_SELECTOR).forEach(injectMenu);
   }
 
   // The options menu is rendered in a portal without a DOM link back to its
@@ -419,6 +429,16 @@
       toast(e.message || 'Could not add task to Vikunja.', true);
     }
   }
+
+  // When the extension is reloaded or updated, the background re-runs this
+  // script into already-open Element tabs (dynamic registrations only apply to
+  // pages loaded afterwards). Buttons and markers left behind by the previous
+  // instance are stale (their icon URLs and event handlers died with it), so
+  // remove them so this instance can inject fresh ones.
+  document.querySelectorAll('.vikunja-element-add, .vikunja-element-toast')
+    .forEach((el) => el.remove());
+  document.querySelectorAll('[data-vikunja-injected]')
+    .forEach((el) => el.removeAttribute('data-vikunja-injected'));
 
   const root = document.body || document.documentElement;
   if (root) {
