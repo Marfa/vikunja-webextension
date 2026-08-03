@@ -84,10 +84,11 @@ function getById(id) {
 }
 
 const storage = new Map();
-const calls = { listTasks: [], createTask: [], completeTask: [], listProjectViews: [] };
+const calls = { listTasks: [], createTask: [], completeTask: [], listProjectViews: [], hostChecks: [], hostRequests: [] };
 const createdTasks = [];
 const magicCalls = { searchProjectUsers: [], listLabels: [], createLabel: [], addLabelToTask: [] };
 let quickAddModeMock = 'vikunja';
+let hostPermGranted = true;
 const labelFixture = [{ id: 50, title: 'focus', hex_color: 'ff0000' }];
 const userFixture = [{ id: 7, username: 'alice', name: 'Alice', email: 'alice@example.com' }];
 const projects = [
@@ -173,6 +174,16 @@ const VikunjaLib = {
     return Promise.resolve();
   },
   dueTodayISO: () => '2026-08-02T12:00:00.000Z',
+  hostPermissionPatterns: (config) => (config && config.baseUrl ? [new URL(config.baseUrl).origin + '/*'] : []),
+  hasHostPermissions: async (patterns) => {
+    calls.hostChecks.push(patterns);
+    return !patterns || patterns.length === 0 || hostPermGranted;
+  },
+  requestHostPermissions: async (patterns) => {
+    calls.hostRequests.push(patterns);
+    if (patterns && patterns.length) hostPermGranted = true;
+    return true;
+  },
   // Mirrors lib/vikunja.js; the real function is regression-tested in
   // quickadd_harness.js against dueTodayISO.
   calculateNearestHours(d = new Date()) {
@@ -231,6 +242,30 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   assert(!calls.listTasks[0].projectId, 'no project filter without defaultProject');
   assert(!ids['quick-chips'].classList.contains('show'), 'chips hidden while input empty');
   assert(ids['quick-title'].placeholder.includes('+Project'), 'vikunja placeholder hints magic, got ' + JSON.stringify(ids['quick-title'].placeholder));
+
+  // Missing host permission: prompt + grant button, no doomed fetch
+  hostPermGranted = false;
+  const fetchBefore = calls.listTasks.length;
+  ids['quick-title'].value = '';
+  ids['config-prompt'].hidden = true;
+  ids['grant-access'].hidden = true;
+  eval(src);
+  await new Promise((r) => setTimeout(r, 20));
+  assert(ids['config-prompt'].hidden === false, 'missing permission shows config prompt');
+  assert(ids['grant-access'].hidden === false, 'grant button shown');
+  assert(calls.listTasks.length === fetchBefore, 'no fetch without host permission');
+  assert(calls.hostChecks[calls.hostChecks.length - 1][0] === 'https://try.vikunja.io/*', 'host permission check uses full pattern');
+
+  const grantClick = ids['grant-access'].listeners['click'];
+  grantClick[grantClick.length - 1]();
+  await new Promise((r) => setTimeout(r, 0));
+  await new Promise((r) => setTimeout(r, 20));
+  assert(hostPermGranted === true, 'grant button grants the permission');
+  assert(calls.hostRequests.length >= 1 && calls.hostRequests[calls.hostRequests.length - 1][0] === 'https://try.vikunja.io/*', 'grant requests the full pattern');
+  assert(calls.listTasks.length === fetchBefore + 1, 'grant re-runs load and fetches tasks');
+  assert(ids['config-prompt'].hidden === true, 'prompt hidden after grant');
+  assert(ids['grant-access'].hidden === true, 'grant button hidden after grant');
+  hostPermGranted = true;
 
   const triggerInput = () => {
     const onInput = ids['quick-title'].listeners['input'];

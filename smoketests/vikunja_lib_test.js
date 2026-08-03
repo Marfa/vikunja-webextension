@@ -83,6 +83,14 @@ const V = globalThis.VikunjaLib;
   const prefs = await V.getPrefs();
   assert.deepStrictEqual(prefs, { defaultProjectId: '7', dueToday: true, customFilter: 'done = false', sortBy: 'position', rememberLastSort: false });
 
+  assert.deepStrictEqual(V.hostPermissionPatterns({ baseUrl: 'https://vikunja.example' }), ['https://vikunja.example/*']);
+  assert.deepStrictEqual(V.hostPermissionPatterns({ baseUrl: 'https://vikunja.example:8443' }), ['https://vikunja.example:8443/*']);
+  assert.deepStrictEqual(V.hostPermissionPatterns({ baseUrl: '' }), []);
+  assert.deepStrictEqual(V.hostPermissionPatterns({}), []);
+  assert.deepStrictEqual(V.hostPermissionPatterns(null), []);
+  assert.equal(await V.hasHostPermissions(['https://vikunja.example/*']), true, 'expected granted without api.permissions');
+  assert.equal(await V.requestHostPermissions(['https://vikunja.example/*']), true, 'expected granted without api.permissions');
+
   calls.length = 0;
   const allTasks = await V.listTasks();
   assert.equal(allTasks.length, 6, 'expected 6 tasks across 2 pages');

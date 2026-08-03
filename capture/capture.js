@@ -8,6 +8,9 @@
     listProjects,
     createTask,
     dueTodayISO,
+    hostPermissionPatterns,
+    hasHostPermissions,
+    requestHostPermissions,
   } = window.VikunjaLib;
   const { openOptions: uiOpenOptions, showToast: uiShowToast, fillProjectSelect: uiFillProjectSelect } = window.UiLib;
 
@@ -23,6 +26,7 @@
   const errorEl = document.getElementById('error');
   const toastEl = document.getElementById('toast');
   const openSettingsBtn = document.getElementById('open-settings');
+  const grantAccessBtn = document.getElementById('grant-access');
 
   const params = new URLSearchParams(location.search);
   const initial = {
@@ -45,9 +49,17 @@
   }
 
   async function init() {
-    const { baseUrl } = await getConfig();
+    const config = await getConfig();
+    const { baseUrl } = config;
     if (!baseUrl) {
       configMsg.textContent = 'Vikunja is not configured yet.';
+      configPrompt.hidden = false;
+      return;
+    }
+    const hostPatterns = hostPermissionPatterns(config);
+    if (!await hasHostPermissions(hostPatterns)) {
+      configMsg.textContent = 'Vikunja is configured, but access to your Vikunja server is not granted yet.';
+      grantAccessBtn.hidden = false;
       configPrompt.hidden = false;
       return;
     }
@@ -64,8 +76,9 @@
       titleInput.focus();
       titleInput.select();
     } catch (e) {
-      if (!await api.permissions.contains({ origins: [ new URL(baseUrl).origin + '/*' ] })) {
-        configMsg.textContent = 'Looks like we lost permissions to access your Vikunja. Please go to the settings and re-save.';
+      if (!await hasHostPermissions(hostPatterns)) {
+        configMsg.textContent = 'Looks like we lost permissions to access your Vikunja. You can grant access below.';
+        grantAccessBtn.hidden = false;
       } else {
         configMsg.textContent = `Could not load projects: ${e.message}`;
       }
@@ -108,6 +121,19 @@
   }
 
   openSettingsBtn.addEventListener('click', () => uiOpenOptions(api));
+  grantAccessBtn.addEventListener('click', async () => {
+    grantAccessBtn.disabled = true;
+    try {
+      const config = await getConfig();
+      if (await requestHostPermissions(hostPermissionPatterns(config))) {
+        init();
+      } else {
+        configMsg.textContent = 'Access to your Vikunja server was not granted. You can try again or open the settings.';
+      }
+    } finally {
+      grantAccessBtn.disabled = false;
+    }
+  });
   cancelBtn.addEventListener('click', () => window.close());
   captureForm.addEventListener('submit', submit);
   titleInput.addEventListener('input', () => setError(''));

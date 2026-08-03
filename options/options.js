@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const { api, normalizeBaseUrl, getConfig, getPrefs, request, listProjects } = window.VikunjaLib;
+  const { api, normalizeBaseUrl, getConfig, getPrefs, request, listProjects, hostPermissionPatterns, requestHostPermissions } = window.VikunjaLib;
   const { fillProjectSelect: uiFillProjectSelect } = window.UiLib;
 
   const form = document.getElementById('settings-form');
@@ -86,7 +86,7 @@
     saveBtn.disabled = true;
     try {
       // Ensure we have the permissions
-      if (!await api.permissions.request({ origins: [ new URL(config.baseUrl).origin + '/*' ] })) {
+      if (!await requestHostPermissions(hostPermissionPatterns(config))) {
         throw new Error(`Permission denied for ${config.baseUrl}`);
       }
 

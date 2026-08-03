@@ -46,7 +46,7 @@ const projects = [
   { id: 1, title: 'Work' },
   { id: 2, title: 'Home' },
 ];
-const calls = { createTask: [], request: [], syncSet: [] };
+const calls = { createTask: [], request: [], syncSet: [], hostRequest: [] };
 
 const VikunjaLib = {
   api: {
@@ -77,6 +77,9 @@ const VikunjaLib = {
   getActiveTab: () => Promise.resolve({}),
   openCapture: () => Promise.resolve(),
   request: (endpoint, opts) => { calls.request.push({ endpoint, opts }); return Promise.resolve({ name: 'Demo' }); },
+  hostPermissionPatterns: (config) => (config && config.baseUrl ? [new URL(config.baseUrl).origin + '/*'] : []),
+  hasHostPermissions: async () => true,
+  requestHostPermissions: async (patterns) => { calls.hostRequest.push(patterns); return true; },
 };
 
 global.window = { open() {}, close() {}, VikunjaLib };
@@ -115,6 +118,8 @@ const root = path.join(__dirname, '..');
   assert(calls.syncSet[0].customFilter === 'priority >= 1', 'options: filter preserved');
   assert(calls.syncSet[0].sortBy === 'due_date', 'options: sort preserved');
   assert(calls.syncSet[0].rememberLastSort === true, 'options: remember-last-sort preserved');
+  assert(calls.hostRequest.length === 1, 'options: save requests host permissions');
+  assert(calls.hostRequest[0].length === 1 && calls.hostRequest[0][0] === 'https://try.vikunja.io/*', 'options: save requests all host patterns');
 
   await ids['test'].listeners['click'][0]();
   assert(calls.request.length === 1 && calls.request[0].endpoint === 'user', 'options: test hits /user');
