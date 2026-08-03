@@ -25,7 +25,7 @@ browser.
   turn gray when a field is unset and color-coded once it is set. Once you
   start typing, a compact Add button appears below the chips.
 - **Capture current page** — add the current tab, a selection or a link as a
-  task via the right-click menu ("Add to Vikunja") or the `Alt+Shift+V`
+  task via the right-click menu ("Add to Vikunja…") or the `Alt+Shift+V`
   shortcut, then refine it in a small capture window before saving.
 - **Options page** — configure your instance URL, API token (with the required
   permissions documented on the page), default project, "due today" default, a

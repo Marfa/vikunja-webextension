@@ -35,7 +35,7 @@
     api.contextMenus.removeAll(() => {
       api.contextMenus.create({
         id: MENU_ID,
-        title: 'Add to Vikunja',
+        title: 'Add to Vikunja…',
         contexts: ['page', 'selection', 'link'],
       });
     });
