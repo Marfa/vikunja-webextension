@@ -9,6 +9,7 @@
 // globals below are provided manually.
 
 const browserGlobals = {
+  console: 'readonly',
   window: 'readonly',
   document: 'readonly',
   navigator: 'readonly',

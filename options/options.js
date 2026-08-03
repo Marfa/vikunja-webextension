@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const { api, normalizeBaseUrl, getConfig, getPrefs, request, listProjects, hostPermissionPatterns, requestHostPermissions } = window.VikunjaLib;
+  const { api, normalizeBaseUrl, getConfig, getPrefs, request, listProjects, hostPermissionPatterns, requestHostPermissions, getElementInstances, elementInstancePatterns, hasHostPermissions } = window.VikunjaLib;
   const { fillProjectSelect: uiFillProjectSelect } = window.UiLib;
 
   const form = document.getElementById('settings-form');
@@ -15,13 +15,28 @@
   const saveBtn = document.getElementById('save');
   const testBtn = document.getElementById('test');
   const statusEl = document.getElementById('status');
+  const elementList = document.getElementById('element-instances');
+  const addElementBtn = document.getElementById('add-element');
+  const elementDialog = document.getElementById('element-dialog');
+  const elementForm = document.getElementById('element-form');
+  const elementUrlInput = document.getElementById('element-url');
+  const elementStatusEl = document.getElementById('element-status');
+  const elementAddBtn = document.getElementById('element-add');
+  const elementCancelBtn = document.getElementById('element-cancel');
 
   let projects = [];
+  let elementInstances = [];
 
   function showStatus(message, kind) {
     statusEl.textContent = message;
     statusEl.className = `status ${kind}`;
     statusEl.hidden = false;
+  }
+
+  function showElementStatus(message, kind) {
+    elementStatusEl.textContent = message;
+    elementStatusEl.className = `status ${kind}`;
+    elementStatusEl.hidden = !message;
   }
 
   function clearStatus() {
@@ -63,13 +78,15 @@
   }
 
   async function init() {
-    const [config, prefs] = await Promise.all([getConfig(), getPrefs()]);
+    const [config, prefs, instances] = await Promise.all([getConfig(), getPrefs(), getElementInstances()]);
     urlInput.value = config.baseUrl;
     tokenInput.value = config.token;
     dueTodayInput.checked = prefs.dueToday;
     customFilterInput.value = prefs.customFilter;
     sortByInput.value = prefs.sortBy || 'position';
     rememberLastSortInput.checked = prefs.rememberLastSort;
+    elementInstances = instances;
+    renderElementInstances();
     if (config.baseUrl && config.token) {
       try {
         projects = await listProjects();
@@ -129,6 +146,84 @@
     }
   }
 
+  function elementBadge(granted) {
+    const span = document.createElement('span');
+    span.className = `badge ${granted ? 'granted' : 'missing'}`;
+    span.textContent = granted ? 'Granted' : 'Not granted';
+    return span;
+  }
+
+  async function renderElementInstances() {
+    elementList.textContent = '';
+    for (const inst of elementInstances) {
+      const pattern = elementInstancePatterns([inst])[0];
+      const li = document.createElement('li');
+      const url = document.createElement('span');
+      url.className = 'url';
+      url.textContent = inst.url;
+      const badge = elementBadge(pattern ? await hasHostPermissions([pattern]) : false);
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'secondary';
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', () => removeElementInstance(inst.url));
+      li.appendChild(url);
+      li.appendChild(badge);
+      li.appendChild(removeBtn);
+      elementList.appendChild(li);
+    }
+  }
+
+  async function removeElementInstance(url) {
+    const pattern = elementInstancePatterns([{ url }])[0];
+    elementInstances = elementInstances.filter((inst) => inst.url !== url);
+    await api.storage.sync.set({ elementInstances });
+    renderElementInstances();
+    if (pattern && api.permissions && typeof api.permissions.remove === 'function') {
+      api.permissions.remove({ origins: [pattern] }).catch(() => {});
+    }
+    showStatus(`Removed ${url}.`, 'ok');
+  }
+
+  function openElementDialog() {
+    elementUrlInput.value = '';
+    showElementStatus('', '');
+    if (typeof elementDialog.showModal === 'function') {
+      elementDialog.showModal();
+    }
+    elementUrlInput.focus();
+  }
+
+  async function addElement(e) {
+    e.preventDefault();
+    const url = normalizeBaseUrl(elementUrlInput.value);
+    const pattern = elementInstancePatterns([{ url }])[0];
+    if (!pattern) {
+      showElementStatus('Please enter a valid Element URL (e.g. https://app.element.io).', 'error');
+      return;
+    }
+    elementAddBtn.disabled = true;
+    try {
+      if (!await requestHostPermissions([pattern])) {
+        showElementStatus('Access to that Element instance was not granted.', 'error');
+        return;
+      }
+      if (!elementInstances.some((inst) => inst.url === url)) {
+        elementInstances.push({ url });
+        await api.storage.sync.set({ elementInstances });
+      }
+      if (typeof elementDialog.close === 'function') {
+        elementDialog.close();
+      }
+      renderElementInstances();
+      showStatus(`Added ${url}. You can now add tasks from Element.`, 'ok');
+    } catch (err) {
+      showElementStatus(`Could not add instance: ${err.message}`, 'error');
+    } finally {
+      elementAddBtn.disabled = false;
+    }
+  }
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     save();
@@ -137,6 +232,14 @@
   testBtn.addEventListener('click', test);
   urlInput.addEventListener('input', clearStatus);
   tokenInput.addEventListener('input', clearStatus);
+  addElementBtn.addEventListener('click', openElementDialog);
+  elementForm.addEventListener('submit', addElement);
+  elementCancelBtn.addEventListener('click', () => {
+    if (typeof elementDialog.close === 'function') {
+      elementDialog.close();
+    }
+  });
+  elementUrlInput.addEventListener('input', () => showElementStatus('', ''));
 
   init();
 })();

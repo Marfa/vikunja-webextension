@@ -93,6 +93,39 @@
 
   </form>
 
+  <section id="integrations">
+    <h2>Integrations</h2>
+    <p class="hint">
+      Add a Matrix Element web instance to get an &ldquo;Add to Vikunja&rdquo; button on every message.
+      The extension asks for permission to read the page, then adds the task through your Vikunja connection.
+    </p>
+    <ul id="element-instances" class="instances"></ul>
+    <div class="actions">
+      <button type="button" id="add-element" class="secondary">Add Element instance</button>
+    </div>
+  </section>
+
+  <dialog id="element-dialog">
+    <form id="element-form" novalidate>
+      <h3>Add Element instance</h3>
+      <label for="element-url">Element URL</label>
+      <input
+        type="url"
+        id="element-url"
+        placeholder="https://app.element.io"
+        autocomplete="off"
+        spellcheck="false"
+        required
+      />
+      <p class="hint">The address of your Element web instance. You will be asked to grant the extension access to it.</p>
+      <p id="element-status" class="status" hidden></p>
+      <div class="actions">
+        <button type="submit" id="element-add">Add</button>
+        <button type="button" id="element-cancel" class="secondary">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
   <p id="status" role="status" class="status" hidden></p>
   <br />
 

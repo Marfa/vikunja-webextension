@@ -25,6 +25,12 @@
   "options_ui": {
     "page": "options/options.html"
   },
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/icon-16.png"],
+      "matches": ["http://*/*", "https://*/*"]
+    }
+  ],
   "commands": {
     "_execute_action": {
       "suggested_key": {
@@ -41,7 +47,7 @@
       "description": "Add the current website as a task"
     }
   },
-  "permissions": ["storage", "activeTab", "contextMenus"],
+  "permissions": ["storage", "activeTab", "contextMenus", "scripting"],
   "optional_host_permissions": ["http://*/*", "https://*/*"],
   "minimum_chrome_version": "121",
   "browser_specific_settings": {

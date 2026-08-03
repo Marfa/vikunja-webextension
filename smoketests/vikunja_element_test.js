@@ -1,0 +1,162 @@
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const assert = require('assert');
+const src = fs.readFileSync(path.join(__dirname, '..', 'lib/vikunja.js'), 'utf8');
+const bgSrc = fs.readFileSync(path.join(__dirname, '..', 'background/background.js'), 'utf8');
+
+const store = {
+  baseUrl: 'https://vikunja.example',
+  token: 'tk_test',
+  defaultProjectId: null,
+  dueToday: true,
+  elementInstances: [{ url: 'https://element.example' }],
+};
+const granted = new Set(['https://vikunja.example/*', 'https://element.example/*']);
+const listeners = {
+  onInstalled: [], onStartup: [], onChanged: [], onAdded: [], onRemoved: [],
+  onMessage: [], onClicked: [], onCommand: [],
+};
+const calls = { createTask: [], sync: [] };
+const projects = [{ id: 1, title: 'Work' }, { id: 2, title: 'Home' }];
+
+global.chrome = {
+  storage: {
+    sync: {
+      get: async (defaults) => {
+        const out = {};
+        for (const [k, v] of Object.entries(defaults)) out[k] = (k in store) ? store[k] : v;
+        return out;
+      },
+      set: async (obj) => Object.assign(store, obj),
+    },
+    onChanged: { addListener: (fn) => listeners.onChanged.push(fn) },
+  },
+  runtime: {
+    getURL: (p) => `moz-extension://abc/${p}`,
+    onInstalled: { addListener: (fn) => listeners.onInstalled.push(fn) },
+    onStartup: { addListener: (fn) => listeners.onStartup.push(fn) },
+    onMessage: { addListener: (fn) => listeners.onMessage.push(fn) },
+  },
+  permissions: {
+    contains: async ({ origins }) => origins.every((o) => granted.has(o)),
+    request: async ({ origins }) => { origins.forEach((o) => granted.add(o)); return true; },
+    onAdded: { addListener: (fn) => listeners.onAdded.push(fn) },
+    onRemoved: { addListener: (fn) => listeners.onRemoved.push(fn) },
+  },
+  scripting: {
+    registered: [],
+    async registerContentScripts(scripts) { calls.sync.push('register'); this.registered = scripts; },
+    async updateContentScripts(scripts) {
+      if (this.registered.length === 0) throw new Error('script not registered');
+      calls.sync.push('update');
+      this.registered = scripts;
+    },
+    async unregisterContentScripts() { calls.sync.push('unregister'); this.registered = []; },
+  },
+  contextMenus: {
+    removeAll: (cb) => cb && cb(),
+    create: () => {},
+    onClicked: { addListener: (fn) => listeners.onClicked.push(fn) },
+  },
+  commands: { onCommand: { addListener: (fn) => listeners.onCommand.push(fn) } },
+  tabs: { query: async () => [] },
+  windows: { create: (d) => d },
+};
+
+global.fetch = async (url, opts) => {
+  const u = new URL(url);
+  const pathname = u.pathname;
+  if (opts && opts.method === 'POST') {
+    assert.match(pathname, /\/api\/v2\/projects\/\d+\/tasks$/, 'expected task create URL, got ' + url);
+    assert.equal(u.searchParams.get('format'), 'markdown', 'task create requests markdown descriptions');
+    const body = JSON.parse(opts.body);
+    calls.createTask.push({ projectId: pathname.split('/')[4], body });
+    return { ok: true, headers: { get: () => null }, text: async () => JSON.stringify({ id: 5, ...body }) };
+  }
+  assert.equal(pathname, '/api/v2/projects', 'unexpected url ' + url);
+  return { ok: true, headers: { get: () => null }, text: async () => JSON.stringify({ items: projects, total_pages: 1 }) };
+};
+
+eval(src);
+eval(bgSrc);
+
+const delay = (ms) => new Promise((r) => { setTimeout(r, ms); });
+const send = (message, senderUrl) => new Promise((resolve) => {
+  listeners.onMessage[0](message, { url: senderUrl }, resolve);
+});
+
+(async () => {
+  // Install: registers the content script for the stored instance. The first
+  // sync cannot update (nothing registered yet), so it cleans up and registers.
+  listeners.onInstalled[0]();
+  await delay(10);
+  assert.deepStrictEqual(calls.sync, ['unregister', 'register'], 'install registers the content script');
+  const registered = chrome.scripting.registered[0];
+  assert.equal(registered.id, 'vikunja-element');
+  assert.deepStrictEqual(registered.matches, ['https://element.example/*']);
+  assert.deepStrictEqual(registered.js, ['content/element.js']);
+  assert.deepStrictEqual(registered.css, ['content/element.css']);
+
+  // Storage change for a different instance updates the scripts in place.
+  store.elementInstances = [{ url: 'https://app.element.io' }];
+  listeners.onChanged[0]({ elementInstances: { newValue: store.elementInstances } }, 'sync');
+  await delay(10);
+  assert.deepStrictEqual(calls.sync, ['unregister', 'register', 'update'], 'storage change updates the content script');
+  assert.deepStrictEqual(chrome.scripting.registered[0].matches, ['https://app.element.io/*']);
+
+  // Empty list unregisters the script again.
+  store.elementInstances = [];
+  listeners.onChanged[0]({ elementInstances: { newValue: store.elementInstances } }, 'sync');
+  await delay(10);
+  assert.deepStrictEqual(calls.sync, ['unregister', 'register', 'update', 'unregister'], 'empty list unregisters the content script');
+
+  // Restore state for the message-handler tests.
+  store.elementInstances = [{ url: 'https://element.example' }];
+  listeners.onChanged[0]({ elementInstances: { newValue: store.elementInstances } }, 'sync');
+  await delay(10);
+  calls.sync = [];
+  calls.createTask = [];
+
+  // Valid sender origin, no default project -> falls back to the first project.
+  let res = await send({ type: 'vikunja.create-task', title: '  Hello   world  ', description: 'From Room by Alice' }, 'https://element.example/#/room/!abc:server');
+  assert.equal(res.ok, true, 'expected task to be created, got ' + JSON.stringify(res));
+  assert.equal(res.task.title, 'Hello world', 'title is trimmed and collapsed');
+  assert.equal(calls.createTask.length, 1);
+  assert.equal(calls.createTask[0].projectId, '1', 'defaults to the first project');
+  assert.equal(calls.createTask[0].body.description, 'From Room by Alice');
+  assert.equal(calls.createTask[0].body.due_date, globalThis.VikunjaLib.dueTodayISO(), 'due today applied when enabled');
+
+  // Preferred project id is used when set.
+  store.defaultProjectId = '7';
+  res = await send({ type: 'vikunja.create-task', title: 'Use pref' }, 'https://element.example');
+  assert.equal(res.ok, true);
+  assert.equal(calls.createTask.at(-1).projectId, '7');
+  store.defaultProjectId = null;
+
+  // Due-today pref off: no due_date in the body.
+  store.dueToday = false;
+  res = await send({ type: 'vikunja.create-task', title: 'No due' }, 'https://element.example');
+  assert.equal(res.ok, true);
+  assert.ok(!('due_date' in calls.createTask.at(-1).body), 'no due date when disabled');
+  store.dueToday = true;
+
+  // Rejects requests from non-registered origins.
+  res = await send({ type: 'vikunja.create-task', title: 'x' }, 'https://evil.example');
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes('registered Element'), 'origin rejected, got ' + res.error);
+
+  // Rejects when Vikunja is not configured.
+  store.baseUrl = '';
+  res = await send({ type: 'vikunja.create-task', title: 'x' }, 'https://element.example');
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes('configured'), 'config missing surfaced, got ' + res.error);
+  store.baseUrl = 'https://vikunja.example';
+
+  // Rejects empty titles.
+  res = await send({ type: 'vikunja.create-task', title: '   ' }, 'https://element.example');
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes('No message text'), 'empty title rejected, got ' + res.error);
+
+  console.log('ELEMENT SMOKE: ALL PASS');
+})().catch((e) => { console.error('FAIL', e); process.exit(1); });

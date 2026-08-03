@@ -1,8 +1,12 @@
 h2 {
-  margin: 1.75rem 0 0;
+  margin: 2.25rem 0 0;
   font-size: 1rem;
   border-top: 1px solid var(--border);
-  padding-top: 1.25rem;
+  padding-top: 1.5rem;
+}
+
+body {
+  padding: 1.25rem;
 }
 
 h2:first-of-type {
@@ -11,10 +15,16 @@ h2:first-of-type {
   padding-top: 0;
 }
 
+#integrations {
+  margin-top: 2.25rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
 label {
   display: block;
   font-weight: 600;
-  margin: 1rem 0 0.35rem;
+  margin: 1.25rem 0 0.35rem;
 }
 
 label.checkbox {
@@ -22,7 +32,7 @@ label.checkbox {
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
-  margin-top: 1.25rem;
+  margin-top: 1.5rem;
 }
 
 label.checkbox input[type="checkbox"] {
@@ -70,7 +80,7 @@ ul.permissions code,
 .actions {
   display: flex;
   gap: 0.75rem;
-  margin-top: 1.5rem;
+  margin-top: 1.75rem;
 }
 
 button {
@@ -102,4 +112,77 @@ button#save:hover {
 .status.error {
   background: #fdeceb;
   color: var(--err);
+}
+
+.instances {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+}
+
+.instances li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 0.6rem;
+}
+
+.instances li .url {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.instances li button {
+  flex: 0 0 auto;
+  padding: 0.4rem 0.9rem;
+}
+
+.badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.badge.granted {
+  background: #e7f6ee;
+  color: var(--ok);
+}
+
+.badge.missing {
+  background: #fff3cd;
+  color: #8a6d1a;
+}
+
+dialog#element-dialog {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  width: min(420px, calc(100vw - 2rem));
+}
+
+dialog#element-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+dialog#element-dialog h3 {
+  margin: 0 0 0.25rem;
+}
+
+dialog#element-dialog .actions {
+  margin-top: 1.25rem;
+}
+
+dialog#element-dialog .actions button#element-add {
+  background: var(--blue);
+  color: #fff;
 }

@@ -79,6 +79,8 @@ const VikunjaLib = {
   hostPermissionPatterns: (config) => (config && config.baseUrl ? [new URL(config.baseUrl).origin + '/*'] : []),
   hasHostPermissions: async () => true,
   requestHostPermissions: async (patterns) => { calls.hostRequest.push(patterns); return true; },
+  getElementInstances: () => Promise.resolve([]),
+  elementInstancePatterns: (instances) => (Array.isArray(instances) ? instances.map((i) => new URL(i.url).origin + '/*') : []),
 };
 
 global.window = { open() {}, close() {}, VikunjaLib };

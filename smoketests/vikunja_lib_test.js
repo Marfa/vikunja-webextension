@@ -100,6 +100,18 @@ const V = globalThis.VikunjaLib;
   assert.equal(await V.hasHostPermissions(['https://vikunja.example/*']), true, 'expected granted without api.permissions');
   assert.equal(await V.requestHostPermissions(['https://vikunja.example/*']), true, 'expected granted without api.permissions');
 
+  store.elementInstances = [{ url: 'https://element.example/' }, { url: 'https://app.element.io' }, { url: '' }];
+  assert.deepStrictEqual(
+    await V.getElementInstances(),
+    [{ url: 'https://element.example' }, { url: 'https://app.element.io' }],
+    'getElementInstances normalizes and filters stored instances',
+  );
+  assert.deepStrictEqual(V.elementInstancePatterns([{ url: 'https://element.example' }, { url: 'https://app.element.io' }]), ['https://element.example/*', 'https://app.element.io/*']);
+  assert.deepStrictEqual(V.elementInstancePatterns([]), []);
+  assert.deepStrictEqual(V.elementInstancePatterns(null), []);
+  assert.deepStrictEqual(V.elementInstancePatterns([{ url: 'not a url' }]), []);
+  store.elementInstances = [];
+
   calls.length = 0;
   const allTasks = await V.listTasks();
   assert.equal(allTasks.length, 6, 'expected 6 tasks across 2 pages');
