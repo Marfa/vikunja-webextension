@@ -265,8 +265,8 @@
     sel.appendChild(
       chipOption(
         '',
-        tokensUsed.length > 0 ? `Assignees · ${tokensUsed.length}` : users === null ? 'Assignees…' : 'Assignee'
-      )
+        tokensUsed.length > 0 ? `Assignees · ${tokensUsed.length}` : users === null ? 'Assignees…' : 'Assignee',
+      ),
     );
     if (users !== null) {
       for (const u of users) {
@@ -407,7 +407,7 @@
     const path = document.createElementNS(SVG_NS, 'path');
     path.setAttribute(
       'd',
-      'M1,9 L1,3.5 C1,2 2,1 3.5,1 L14.5,1 C16,1 17,2 17,3.5 L17,14.5 C17,16 16,17 14.5,17 L3.5,17 C2,17 1,16 1,14.5 L1,9 Z'
+      'M1,9 L1,3.5 C1,2 2,1 3.5,1 L14.5,1 C16,1 17,2 17,3.5 L17,14.5 C17,16 16,17 14.5,17 L3.5,17 C2,17 1,16 1,14.5 L1,9 Z',
     );
     const polyline = document.createElementNS(SVG_NS, 'polyline');
     polyline.setAttribute('points', '1 9 7 14 15 4');
@@ -424,9 +424,9 @@
     const query = searchInput.value.trim().toLowerCase();
     const visible = query
       ? tasks.filter((t) => {
-          const hay = `${t.title || ''} ${t.description || ''}`.toLowerCase();
-          return hay.includes(query);
-        })
+        const hay = `${t.title || ''} ${t.description || ''}`.toLowerCase();
+        return hay.includes(query);
+      })
       : tasks;
     taskEmpty.hidden = visible.length > 0;
     taskEmpty.textContent = query ? 'No matching tasks.' : 'No tasks here yet.';
@@ -583,7 +583,7 @@
     const li = Array.from(taskList.childNodes).find(
       (c) =>
         typeof c.getAttribute === 'function' &&
-        String(c.getAttribute('data-task-id')) === String(taskId)
+        String(c.getAttribute('data-task-id')) === String(taskId),
     );
     if (!li) return;
     li.classList.add('task--new');
@@ -673,25 +673,25 @@
     }
     showView(loading);
     try {
-    const [projects, p, mode] = await Promise.all([
-      listProjects(),
-      getPrefs(),
-      getQuickAddMagicMode().catch(() => PrefixMode.Default),
-    ]);
-    prefs = p;
-    quickAddMode = mode;
-    projectsById = new Map(projects.map((pr) => [pr.id, pr]));
-    quickTitle.placeholder = PLACEHOLDERS[quickAddMode] || 'Add a task…';
-    await resolveCurrentProject();
-    await resolveSort();
-    sortBtn.title = sortLabel();
-    sortBtn.setAttribute('aria-label', sortLabel());
-    tasks = await loadTasks();
-    renderTasks();
-    renderChips();
-    autosize();
-    showView(list);
-    quickTitle.focus();
+      const [projects, p, mode] = await Promise.all([
+        listProjects(),
+        getPrefs(),
+        getQuickAddMagicMode().catch(() => PrefixMode.Default),
+      ]);
+      prefs = p;
+      quickAddMode = mode;
+      projectsById = new Map(projects.map((pr) => [pr.id, pr]));
+      quickTitle.placeholder = PLACEHOLDERS[quickAddMode] || 'Add a task…';
+      await resolveCurrentProject();
+      await resolveSort();
+      sortBtn.title = sortLabel();
+      sortBtn.setAttribute('aria-label', sortLabel());
+      tasks = await loadTasks();
+      renderTasks();
+      renderChips();
+      autosize();
+      showView(list);
+      quickTitle.focus();
     } catch (e) {
       if (!await hasHostPermissions(hostPatterns)) {
         configPrompt.querySelector('.empty').textContent =
@@ -734,12 +734,12 @@
   function resolveProject(parsedProject) {
     if (parsedProject) {
       const exact = [...projectsById.values()].find(
-        (p) => p.title.toLowerCase() === parsedProject.toLowerCase()
+        (p) => p.title.toLowerCase() === parsedProject.toLowerCase(),
       );
       if (exact) return exact.id;
       const byIdentifier = [...projectsById.values()].find(
         (p) =>
-          p.identifier && p.identifier.toLowerCase() === parsedProject.toLowerCase()
+          p.identifier && p.identifier.toLowerCase() === parsedProject.toLowerCase(),
       );
       if (byIdentifier) return byIdentifier.id;
     }
@@ -792,7 +792,7 @@
     const existing = await listLabels();
     for (const title of uniqueLabels) {
       let label = existing.find(
-        (l) => l.title && l.title.toLowerCase() === title.toLowerCase()
+        (l) => l.title && l.title.toLowerCase() === title.toLowerCase(),
       );
       if (!label) {
         try {
@@ -872,7 +872,7 @@
           cleanedTitle = cleanupItemText(
             cleanedTitle,
             assignees.map((a) => a.match),
-            assigneePrefix
+            assigneePrefix,
           );
         }
       }

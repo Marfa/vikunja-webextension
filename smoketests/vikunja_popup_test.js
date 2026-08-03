@@ -143,7 +143,7 @@ const VikunjaLib = {
   listTasks: (opts) => {
     calls.listTasks.push(opts);
     return Promise.resolve(
-      JSON.parse(JSON.stringify(tasksFixture)).concat(JSON.parse(JSON.stringify(createdTasks)))
+      JSON.parse(JSON.stringify(tasksFixture)).concat(JSON.parse(JSON.stringify(createdTasks))),
     );
   },
   createTask: (projectId, data) => {
@@ -237,7 +237,7 @@ const errors = [];
 const assert = (cond, msg) => { if (!cond) errors.push(msg); };
 
 (async () => {
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 20); });
 
   assert(ids['list'].hidden === false, 'list view shown');
   assert(ids['config-prompt'].hidden === true, 'config prompt hidden');
@@ -254,7 +254,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   ids['config-prompt'].hidden = true;
   ids['grant-access'].hidden = true;
   eval(src);
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 20); });
   assert(ids['config-prompt'].hidden === false, 'missing permission shows config prompt');
   assert(ids['grant-access'].hidden === false, 'grant button shown');
   assert(calls.listTasks.length === fetchBefore, 'no fetch without host permission');
@@ -262,8 +262,8 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
 
   const grantClick = ids['grant-access'].listeners['click'];
   grantClick[grantClick.length - 1]();
-  await new Promise((r) => setTimeout(r, 0));
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 0); });
+  await new Promise((r) => { setTimeout(r, 20); });
   assert(hostPermGranted === true, 'grant button grants the permission');
   assert(calls.hostRequests.length >= 1 && calls.hostRequests[calls.hostRequests.length - 1][0] === 'https://try.vikunja.io/*', 'grant requests the full pattern');
   assert(calls.listTasks.length === fetchBefore + 1, 'grant re-runs load and fetches tasks');
@@ -325,7 +325,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   // todoist mode: #project +assignee
   quickAddModeMock = 'todoist';
   eval(src);
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 20); });
   ids['quick-title'].value = '#Home +alice Call Alice';
   await getSubmit()({ preventDefault() {} });
   assert(calls.createTask.length === 4 && calls.createTask[3].projectId === 2, 'todoist #project resolves Home');
@@ -337,7 +337,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   // selection becomes the submit project
   quickAddModeMock = 'disabled';
   eval(src);
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 20); });
   assert(ids['quick-title'].placeholder === 'Add a task…', 'disabled placeholder, got ' + JSON.stringify(ids['quick-title'].placeholder));
   ids['quick-title'].value = 'x';
   triggerInput();
@@ -356,7 +356,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   VikunjaLib.getPrefs = () => Promise.resolve({ defaultProjectId: null, dueToday: true, customFilter: '' });
   ids['quick-title'].value = '';
   eval(src);
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 20); });
   ids['quick-title'].value = '+Home';
   await getSubmit()({ preventDefault() {} });
   assert(calls.createTask.length === 6 && calls.createTask[5].data.due_date === '2026-08-02T12:00:00.000Z', 'pure-magic quick add applies dueToday default, got ' + JSON.stringify(calls.createTask[5].data));
@@ -370,7 +370,6 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   const dueDateChip = dueChips().find((c) => c.className.includes('chip--date'));
   assert(!!dueDateChip, 'date chip present with dueToday pref');
   assert(dueDateChip.options.filter((o) => o._text === 'today').length === 1, 'date chip shows today once (placeholder only), got ' + JSON.stringify(dueDateChip.options.map((o) => o._text)));
-
 
   // Logo opens the instance
   const opened = [];
@@ -397,7 +396,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
 
   VikunjaLib.getPrefs = () => Promise.resolve({ defaultProjectId: 999, dueToday: false, customFilter: '' });
   eval(src);
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 20); });
   ids['quick-title'].value = 'x';
   triggerInput();
   assert(ids['quick-chips'].childNodes[0].value === '1', 'stale default project -> falls back to first project, got ' + ids['quick-chips'].childNodes[0].value);
@@ -408,7 +407,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   storage.set('lastProjectId', null);
   ids['quick-title'].value = '';
   eval(src);
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 20); });
 
   assert(!ids['quick-chips'].classList.contains('show'), 'chips hidden when input empty');
   assert(!ids['quick-add-btn'].classList.contains('show'), 'Add button hidden when input empty');
@@ -447,7 +446,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
 
   ids['quick-title'].value = 'Water';
   triggerInput();
-  await new Promise((r) => setTimeout(r, 0));
+  await new Promise((r) => { setTimeout(r, 0); });
   chipSel(2).value = '50';
   await chipSel(2).listeners['change'][0]({ target: chipSel(2) });
   assert(ids['quick-title'].value === 'Water *focus', 'label chip appends *focus, got ' + JSON.stringify(ids['quick-title'].value));
@@ -479,7 +478,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   quickAddModeMock = 'todoist';
   ids['quick-title'].value = '';
   eval(src);
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 20); });
   assert(ids['quick-title'].placeholder.includes('#Project'), 'todoist placeholder, got ' + JSON.stringify(ids['quick-title'].placeholder));
   ids['quick-title'].value = '#Home Call !2';
   triggerInput();
@@ -494,7 +493,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   ids['quick-title'].value = '';
   ids['sort-menu'].hidden = true;
   eval(src);
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 20); });
 
   assert(ids['sort-menu'].hidden === true, 'sort menu hidden initially');
   assert(ids['sort-btn'].title.includes('Created'), 'sort button title shows current sort, got ' + JSON.stringify(ids['sort-btn'].title));
@@ -523,7 +522,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   const dirItem = sortItems()[sortItems().length - 1];
   assert(dirItem._text.includes('Ascending'), 'menu shows current direction, got ' + JSON.stringify(dirItem._text));
   dirItem.listeners['click'][0]();
-  await new Promise((r) => setTimeout(r, 0));
+  await new Promise((r) => { setTimeout(r, 0); });
   const lastFetch2 = calls.listTasks[calls.listTasks.length - 1];
   assert(lastFetch2.sortBy === 'due_date' && lastFetch2.orderBy === 'desc', 'direction toggle reverses to desc, got ' + JSON.stringify(lastFetch2));
   assert(storage.get('lastSort').orderBy === 'desc', 'reversed direction remembered');
@@ -533,7 +532,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   storage.set('lastSort', { mode: 'due_date', orderBy: 'desc' });
   ids['quick-title'].value = '';
   eval(src);
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 20); });
   const lastFetch3 = calls.listTasks[calls.listTasks.length - 1];
   assert(lastFetch3.sortBy === 'priority', 'ignores local lastSort when remember is off, got ' + JSON.stringify(lastFetch3));
   assert(lastFetch3.orderBy === 'desc', 'priority defaults to desc');
@@ -544,7 +543,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   ids['quick-title'].value = '';
   ids['sort-menu'].hidden = true;
   eval(src);
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 20); });
   const lastFetch4 = calls.listTasks[calls.listTasks.length - 1];
   assert(calls.listProjectViews.includes(9), 'resolves views for the default project, got ' + JSON.stringify(calls.listProjectViews));
   assert(lastFetch4.viewId === 10, 'passes the list view id to listTasks, got ' + JSON.stringify(lastFetch4));
@@ -556,7 +555,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   VikunjaLib.listProjectViews = () => Promise.resolve([]);
   ids['quick-title'].value = '';
   eval(src);
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 20); });
   const lastFetch5 = calls.listTasks[calls.listTasks.length - 1];
   assert(lastFetch5.sortBy === 'created' && lastFetch5.orderBy === 'desc', 'falls back to created desc without a view, got ' + JSON.stringify(lastFetch5));
 

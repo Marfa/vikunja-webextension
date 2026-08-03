@@ -1,0 +1,14 @@
+{
+  "name": "vikunja-webextension",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Manage Vikunja tasks from your browser toolbar, with a task list, quick add and capture of the current page.",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "for f in smoketests/*.js; do node \"$f\" || exit 1; done"
+  },
+  "devDependencies": {
+    "eslint": "^10.3.0"
+  }
+}

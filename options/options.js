@@ -113,7 +113,7 @@
       });
       showStatus(
         `Connected successfully${user && user.name ? ` as ${user.name}` : ''}.`,
-        'ok'
+        'ok',
       );
       try {
         projects = await listProjects();

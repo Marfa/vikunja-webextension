@@ -190,12 +190,12 @@ const V = globalThis.VikunjaLib;
   assert.deepStrictEqual(JSON.parse(calls[0].opts.body), { title: 'new', hex_color: 'ff0000' });
 
   calls.length = 0;
-  const attached = await V.addLabelToTask(5, 90);
+  await V.addLabelToTask(5, 90);
   assert.ok(calls[0].url.includes('/api/v2/tasks/5/labels'));
   assert.deepStrictEqual(JSON.parse(calls[0].opts.body), { label_id: 90 });
 
   calls.length = 0;
-  const assigned = await V.addAssigneeToTask(5, 7);
+  await V.addAssigneeToTask(5, 7);
   assert.ok(calls[0].url.includes('/api/v2/tasks/5/assignees'));
   assert.ok(calls[0].opts.method === 'POST', 'expected POST for assignee attach');
   assert.deepStrictEqual(JSON.parse(calls[0].opts.body), { user_id: 7 });

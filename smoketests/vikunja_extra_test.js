@@ -41,7 +41,6 @@ function fakeElement(id) {
 
 const ids = {};
 function getById(id) { return (ids[id] = ids[id] || fakeElement(id)); }
-const storage = new Map();
 const projects = [
   { id: 1, title: 'Work' },
   { id: 2, title: 'Home' },
@@ -73,7 +72,7 @@ const VikunjaLib = {
   createTask: (projectId, body) => { calls.createTask.push({ projectId, body }); return Promise.resolve({ id: 1 }); },
   completeTask: () => Promise.resolve(),
   dueTodayISO: () => '2026-08-02T21:00:00Z',
-  buildTaskContent: (a, b) => ({}),
+  buildTaskContent: (_a, _b) => ({}),
   getActiveTab: () => Promise.resolve({}),
   openCapture: () => Promise.resolve(),
   request: (endpoint, opts) => { calls.request.push({ endpoint, opts }); return Promise.resolve({ name: 'Demo' }); },
@@ -100,7 +99,7 @@ const root = path.join(__dirname, '..');
   eval(fs.readFileSync(path.join(root, 'lib/ui.js'), 'utf8'));
   global.window.UiLib = globalThis.UiLib;
   eval(fs.readFileSync(path.join(root, 'options/options.js'), 'utf8'));
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 20); });
   assert(ids['base-url'].value === 'https://try.vikunja.io', 'options: url filled');
   assert(ids['token'].value === 'tk_test', 'options: token filled');
   assert(ids['due-today'].checked === true, 'options: due-today checked');
@@ -126,7 +125,7 @@ const root = path.join(__dirname, '..');
   assert(ids['status'].hidden === false && ids['status'].className.includes('ok'), 'options: test ok status');
 
   eval(fs.readFileSync(path.join(root, 'capture/capture.js'), 'utf8'));
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 20); });
   assert(ids['capture-form'].hidden === false, 'capture: form shown');
   assert(ids['title'].value === 'Found bug', 'capture: title from query');
   assert(ids['description'].value === 'On page', 'capture: description from query');
@@ -141,7 +140,7 @@ const root = path.join(__dirname, '..');
 
   VikunjaLib.getPrefs = () => Promise.resolve({ defaultProjectId: null, dueToday: false, customFilter: '' });
   eval(fs.readFileSync(path.join(root, 'capture/capture.js'), 'utf8'));
-  await new Promise((r) => setTimeout(r, 20));
+  await new Promise((r) => { setTimeout(r, 20); });
   assert(ids['project'].value === '1', 'capture: no default project -> first project preselected');
 
   if (errors.length) {

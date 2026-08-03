@@ -8,8 +8,7 @@ const { parseTaskText, PrefixMode, analyzeTaskText, removeSpan } = globalThis.Qu
 let pass = 0, fail = 0;
 function eq(actual, expected, msg) {
   const a = JSON.stringify(actual), e = JSON.stringify(expected);
-  if (a === e) { pass++; }
-  else { fail++; console.error('FAIL', msg, '| got', a, '| want', e); }
+  if (a === e) { pass++; } else { fail++; console.error('FAIL', msg, '| got', a, '| want', e); }
 }
 function ok(cond, msg) {
   if (cond) { pass++; } else { fail++; console.error('FAIL', msg); }
