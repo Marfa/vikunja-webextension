@@ -11,6 +11,7 @@
   --purple: #8b5cf6;
   --green: #16a34a;
   --teal: #0d9488;
+  --focus-ring: 0 0 0 2px rgba(25, 106, 255, 0.3);
 }
 
 * {
@@ -60,9 +61,9 @@ select {
 input:focus,
 textarea:focus,
 select:focus {
-  outline: 2px solid var(--blue);
-  outline-offset: 1px;
+  outline: none;
   border-color: var(--blue);
+  box-shadow: var(--focus-ring);
 }
 
 .error {

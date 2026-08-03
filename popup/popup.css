@@ -25,8 +25,8 @@ body {
 }
 
 #logo:focus-visible {
-  outline: 2px solid var(--blue);
-  outline-offset: 1px;
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .header input[type="search"] {
@@ -41,9 +41,9 @@ body {
 }
 
 .header input[type="search"]:focus {
-  outline: 2px solid var(--blue);
-  outline-offset: 1px;
+  outline: none;
   border-color: var(--blue);
+  box-shadow: var(--focus-ring);
   background: #fff;
 }
 
@@ -190,10 +190,11 @@ body {
   cursor: pointer;
 }
 
+.chip-select:focus,
 .chip-select:focus-visible {
-  outline: 2px solid var(--blue);
-  outline-offset: 1px;
-  border-radius: 999px;
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: none;
 }
 
 .chip--project {
