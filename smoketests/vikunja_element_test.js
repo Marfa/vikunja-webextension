@@ -182,10 +182,15 @@ const sendRaw = (message, sender) => new Promise((resolve) => {
   // The injected function sends the exact m.reaction content the UI's reaction
   // picker would, and only when element-web is logged in.
   const sendCalls = [];
+  const rooms = {
+    '!abc:server': { roomId: '!abc:server', findEventById: (id) => (id === '$evt:server' ? {} : null) },
+  };
   global.window = {
     mxMatrixClientPeg: {
       safeGet: () => ({
         sendEvent: async (roomId, type, content) => { sendCalls.push({ roomId, type, content }); return { event_id: 'r1' }; },
+        getRoom: (id) => rooms[id] || null,
+        getRooms: () => Object.values(rooms),
       }),
     },
   };
@@ -193,14 +198,31 @@ const sendRaw = (message, sender) => new Promise((resolve) => {
   const evt = await fn('!abc:server', '$evt:server', '📝');
   assert.equal(evt.event_id, 'r1');
   assert.equal(sendCalls.length, 1);
-  assert.equal(sendCalls[0].roomId, '!abc:server');
+  assert.equal(sendCalls[0].roomId, '!abc:server', 'uses the room id from the URL when the client knows it');
   assert.equal(sendCalls[0].type, 'm.reaction');
   assert.deepStrictEqual(sendCalls[0].content, {
     'm.relates_to': { rel_type: 'm.annotation', event_id: '$evt:server', key: '📝' },
   });
+
+  // When the room id is missing or unknown (e.g. path-based routing), the room
+  // is resolved by searching for the event instead.
+  await fn('', '$evt:server', '📝');
+  assert.equal(sendCalls.at(-1).roomId, '!abc:server', 'resolves the room from the event id');
+  await fn('!other:server', '$evt:server', '📝');
+  assert.equal(sendCalls.at(-1).roomId, '!abc:server', 'ignores an unknown room id and resolves by event');
+  await assert.rejects(() => fn('', '$missing:server', '📝'), 'rejects when the event is in no known room');
+
   delete global.window.mxMatrixClientPeg;
   await assert.rejects(() => fn('!abc:server', '$evt:server', '📝'), 'rejects without a logged-in client');
   delete global.window;
+
+  // Rejects when no event id is supplied at all.
+  res = await sendRaw(
+    { type: 'vikunja.matrix-react', roomId: '!abc:server' },
+    { url: 'https://element.example', tab: { id: 42 } },
+  );
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes('Missing event id'), 'missing event id surfaced, got ' + res.error);
 
   // Rejects requests from non-registered origins.
   res = await sendRaw(
@@ -228,6 +250,73 @@ const sendRaw = (message, sender) => new Promise((resolve) => {
   assert.equal(res.ok, false);
   assert.ok(res.error.includes('Scripting API'), 'scripting missing surfaced, got ' + res.error);
   chrome.scripting = hadScripting;
+
+  // --- Room name fallback via element-web's own MatrixClient (MAIN world) ---
+
+  // Accepts a request from a registered origin, injects into the page's MAIN
+  // world, and returns the client's room name.
+  chrome.scripting.executeCalls.length = 0;
+  const hadExecute = chrome.scripting.executeScript;
+  chrome.scripting.executeScript = async (opts) => {
+    chrome.scripting.executeCalls.push(opts);
+    return [{ result: 'Client Room' }];
+  };
+  res = await sendRaw(
+    { type: 'vikunja.matrix-room-name', roomId: '!abc:server' },
+    { url: 'https://element.example/#/room/!abc:server', tab: { id: 42 } },
+  );
+  assert.equal(res.ok, true, 'room name accepted, got ' + JSON.stringify(res));
+  assert.equal(res.name, 'Client Room');
+  assert.equal(chrome.scripting.executeCalls.length, 1);
+  assert.deepStrictEqual(chrome.scripting.executeCalls[0].target, { tabId: 42 });
+  assert.equal(chrome.scripting.executeCalls[0].world, 'MAIN');
+  assert.deepStrictEqual(chrome.scripting.executeCalls[0].args, ['!abc:server']);
+
+  // The injected function reads room.name from the client, and returns an
+  // empty string for an unknown room.
+  global.window = {
+    mxMatrixClientPeg: {
+      safeGet: () => ({
+        getRoom: (roomId) => (roomId === '!abc:server' ? { name: 'Client Room' } : null),
+      }),
+    },
+  };
+  const roomFn = chrome.scripting.executeCalls[0].func;
+  assert.equal(await roomFn('!abc:server'), 'Client Room', 'reads the room name from the client');
+  assert.equal(await roomFn('!other:server'), '', 'unknown room yields an empty name');
+  delete global.window.mxMatrixClientPeg;
+  await assert.rejects(() => roomFn('!abc:server'), 'rejects without a logged-in client');
+  delete global.window;
+
+  // Rejects requests from non-registered origins and without a tab.
+  res = await sendRaw(
+    { type: 'vikunja.matrix-room-name', roomId: '!abc:server' },
+    { url: 'https://evil.example', tab: { id: 42 } },
+  );
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes('registered Element'), 'origin rejected, got ' + res.error);
+  res = await sendRaw(
+    { type: 'vikunja.matrix-room-name', roomId: '!abc:server' },
+    { url: 'https://element.example' },
+  );
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes('No tab'), 'no-tab rejected, got ' + res.error);
+
+  // Rejects a missing room id.
+  res = await sendRaw({ type: 'vikunja.matrix-room-name', roomId: '   ' }, { url: 'https://element.example', tab: { id: 42 } });
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes('Missing room id'), 'missing room id surfaced, got ' + res.error);
+
+  // Rejects when the scripting API is unavailable.
+  delete chrome.scripting;
+  res = await sendRaw(
+    { type: 'vikunja.matrix-room-name', roomId: '!abc:server' },
+    { url: 'https://element.example', tab: { id: 42 } },
+  );
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes('Scripting API'), 'scripting missing surfaced, got ' + res.error);
+  chrome.scripting = hadScripting;
+  chrome.scripting.executeScript = hadExecute;
 
   console.log('ELEMENT SMOKE: ALL PASS');
 })().catch((e) => { console.error('FAIL', e); process.exit(1); });

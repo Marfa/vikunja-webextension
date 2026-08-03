@@ -93,14 +93,37 @@
       label.textContent = 'Add to Vikunja';
       button.appendChild(label);
     }
-    button.addEventListener('click', () => addToVikunja(button));
+    button.addEventListener('click', () => {
+      addToVikunja(button);
+      closeMenu(button);
+    });
     button.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         addToVikunja(button);
+        closeMenu(button);
       }
     });
     return button;
+  }
+
+  // element-web's context menus are portals that only close on an outside
+  // click, Escape, or a click on the invisible menu background. A click on our
+  // injected item does none of those, so close the menu explicitly: click the
+  // background when present, otherwise send an Escape keydown through the
+  // wrapper. Doing this after addToVikunja was started is safe — the message
+  // tile is captured before the menu unmounts.
+  function closeMenu(button) {
+    const wrapper = button.closest('.mx_ContextualMenu_wrapper');
+    if (!wrapper) {
+      return;
+    }
+    const background = wrapper.querySelector('.mx_ContextualMenu_background');
+    if (background) {
+      background.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+    } else {
+      wrapper.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    }
   }
 
   // Action bars: the button is only placed when the bar itself shows a "View
@@ -156,11 +179,38 @@
     return button.closest(TILE_SELECTOR) || lastTile;
   }
 
+  // Room name from the DOM header. The markup changed across element-web
+  // versions (and the current one renders the name in .mx_RoomHeader_truncated),
+  // so match the known variants, most specific first.
   function roomName() {
     const els = document.querySelectorAll(
-      '.mx_RoomHeader_nametext, .mx_RoomHeader_Heading_title, .mx_RoomHeader_nameWithStatus, .mx_RoomHeader_name',
+      '.mx_RoomHeader_truncated, .mx_RoomHeader_heading, '
+        + '.mx_RoomHeader_nametext, .mx_RoomHeader_Heading_title, '
+        + '.mx_RoomHeader_nameWithStatus, .mx_RoomHeader_name',
     );
     return els.length ? cleanText(els[0].textContent) : '';
+  }
+
+  // Fallback: ask the background to read the room name from element-web's own
+  // MatrixClient (injected into the page's MAIN world), which is authoritative
+  // and independent of the DOM layout. Best-effort like the reaction.
+  async function roomNameFromClient() {
+    const roomId = roomIdFromUrl();
+    if (!roomId) {
+      return '';
+    }
+    try {
+      const response = await api.runtime.sendMessage({
+        type: 'vikunja.matrix-room-name',
+        roomId,
+      });
+      if (response && response.ok === true && response.name) {
+        return cleanText(String(response.name));
+      }
+    } catch (e) {
+      // fallback is best-effort
+    }
+    return '';
   }
 
   function senderName(tile) {
@@ -174,6 +224,7 @@
     return el ? cleanText(el.textContent) : '';
   }
 
+  // Plain-text body for the task title (no markup).
   function messageBody(tile) {
     if (!tile) {
       return '';
@@ -182,8 +233,88 @@
     return el ? cleanText(el.textContent) : '';
   }
 
-  function roomIdFromHash() {
-    const match = location.hash.match(/\/room\/([^/?]+)/);
+  // Convert element-web's rendered message HTML back to Markdown so the task
+  // description keeps the message's formatting in Vikunja. Matrix transmits the
+  // message as a plain body plus a formatted_body (HTML), never the original
+  // Markdown, so the rendered DOM is the closest faithful copy to work from.
+  function htmlToMarkdown(node) {
+    if (!node) {
+      return '';
+    }
+    const children = () => Array.from(node.childNodes || node._children || []).map(htmlToMarkdown).join('');
+    const text = () => String(node.textContent || '');
+    const inline = () => children() || text();
+    const tag = String(node.tagName || node.tag || '').toLowerCase();
+    const attr = (name) => (typeof node.getAttribute === 'function' ? node.getAttribute(name) : null);
+
+    switch (tag) {
+      case '':
+        return inline();
+      case 'br':
+        return '\n';
+      case 'hr':
+        return '\n---\n';
+      case 'p':
+        return `\n\n${inline().trim()}\n`;
+      case 'strong':
+      case 'b':
+        return `**${inline()}**`;
+      case 'em':
+      case 'i':
+        return `*${inline()}*`;
+      case 's':
+      case 'del':
+      case 'strike':
+        return `~~${inline()}~~`;
+      case 'u':
+        return `_${inline()}_`;
+      case 'code':
+        return `\`${inline()}\``;
+      case 'pre':
+        return `\n\n\`\`\`\n${text().replace(/\n?$/, '')}\n\`\`\`\n`;
+      case 'a': {
+        const href = attr('href');
+        return href ? `[${inline()}](${href})` : inline();
+      }
+      case 'img': {
+        const src = attr('src');
+        return src ? `![${attr('alt') || ''}](${src})` : '';
+      }
+      case 'h1':
+      case 'h2':
+      case 'h3':
+      case 'h4':
+      case 'h5':
+      case 'h6':
+        return `\n\n${'#'.repeat(Number(tag.slice(1)))} ${inline().trim()}\n`;
+      case 'ul':
+      case 'ol': {
+        const items = Array.from(node.childNodes || node._children || [])
+          .filter((c) => String(c.tagName || c.tag || '').toLowerCase() === 'li')
+          .map((li, i) => `${tag === 'ol' ? `${i + 1}.` : '-'} ${htmlToMarkdown(li).trim()}`);
+        return `\n\n${items.join('\n')}\n`;
+      }
+      case 'blockquote':
+        return `\n\n${inline().trim().split('\n').map((line) => `> ${line}`).join('\n')}\n`;
+      default:
+        return inline();
+    }
+  }
+
+  // Formatted message body for the task description.
+  function markdownBody(tile) {
+    if (!tile) {
+      return '';
+    }
+    const el = tile.querySelector('.mx_EventTile_body');
+    return el ? htmlToMarkdown(el).trim() : '';
+  }
+
+  // The room id from the page URL. element-web can be configured with hash
+  // routing (#/room/...) or path routing (/room/...), so check both.
+  function roomIdFromUrl() {
+    const candidate = location.hash || location.pathname || '';
+    const match = candidate.match(/\/room\/([^/?]+)/);
     return match ? decodeURIComponent(match[1]) : '';
   }
 
@@ -191,7 +322,7 @@
   // attribute on message tiles, so the link is message-level when present and
   // room-level otherwise.
   function permalink(tile) {
-    const roomId = roomIdFromHash();
+    const roomId = roomIdFromUrl();
     if (!roomId) {
       return '';
     }
@@ -199,14 +330,29 @@
     return eventId ? `https://matrix.to/#/${roomId}/${encodeURIComponent(eventId)}` : `https://matrix.to/#/${roomId}`;
   }
 
-  function buildDescription(room, sender, url) {
+  // The first maxLen characters of a message, with an ellipsis when cut.
+  function truncate(value, maxLen) {
+    const text = String(value || '');
+    if (text.length <= maxLen) {
+      return text;
+    }
+    return `${text.slice(0, maxLen)}…`;
+  }
+
+  // Title: the room/DM partner name followed by the start of the message.
+  // For direct messages the room header already shows the partner's name.
+  function taskTitle(room, body, sender) {
+    const start = truncate(body, 50);
+    if (start) {
+      return room ? `${room}: ${start}` : start;
+    }
+    return room || (sender ? `Message from ${sender}` : 'Add task');
+  }
+
+  function buildDescription(body, url) {
     const parts = [];
-    if (room && sender) {
-      parts.push(`From ${room} by ${sender}`);
-    } else if (room) {
-      parts.push(`From ${room}`);
-    } else if (sender) {
-      parts.push(`By ${sender}`);
+    if (body) {
+      parts.push(body);
     }
     if (url) {
       parts.push(`[View message](${url})`);
@@ -216,33 +362,40 @@
 
   // Best-effort reaction: ask the background to have Element react with 📝 via
   // its own MatrixClient (injected into the page's MAIN world). Everything here
-  // is optional — a missing pref, event id or room id, or any failure just
-  // skips so the "added to Vikunja" flow is never affected.
+  // is optional — a missing pref, event id or any failure just skips so the
+  // "added to Vikunja" flow is never affected.
   async function reactWithMemo(tile) {
     const eventId = tile ? tile.getAttribute('data-event-id') : null;
-    const roomId = roomIdFromHash();
-    if (!eventId || !roomId) {
+    if (!eventId) {
       return;
     }
+    const roomId = roomIdFromUrl();
     try {
-      await api.runtime.sendMessage({
+      const response = await api.runtime.sendMessage({
         type: 'vikunja.matrix-react',
         roomId,
         eventId,
         emoji: '📝',
       });
+      if (!response || response.ok !== true) {
+        console.warn('Vikunja: automatic reaction failed:', response && response.error);
+      }
     } catch (e) {
-      // reaction is best-effort
+      console.warn('Vikunja: automatic reaction failed:', e && e.message);
     }
   }
 
   async function addToVikunja(button) {
     const tile = tileOf(button);
-    const room = roomName();
+    let room = roomName();
+    if (!room) {
+      room = await roomNameFromClient();
+    }
     const sender = senderName(tile);
     const url = permalink(tile);
-    const title = messageBody(tile) || (sender ? `Message from ${sender}` : 'Add task');
-    const description = buildDescription(room, sender, url);
+    const body = messageBody(tile);
+    const title = taskTitle(room, body, sender);
+    const description = buildDescription(markdownBody(tile) || body, url);
     try {
       const response = await api.runtime.sendMessage({
         type: 'vikunja.create-task',

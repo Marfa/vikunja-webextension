@@ -119,14 +119,26 @@
   // Runs in the page's MAIN world via scripting.executeScript so it can reach
   // element-web's own MatrixClient and send the reaction with the user's
   // normal session — no tokens and no dependency on element-web's storage
-  // layout. Best-effort: any failure just means no reaction.
+  // layout. The room id taken from the page URL is best-effort (element-web
+  // may use path routing instead of hash routing); when it is missing or
+  // unknown, resolve the room by searching for the event instead. Best-effort:
+  // any failure just means no reaction.
   function matrixReactionFn(roomId, eventId, key) {
     const peg = typeof window !== 'undefined' && window.mxMatrixClientPeg;
     const client = peg && typeof peg.safeGet === 'function' ? peg.safeGet() : null;
     if (!client) {
       return Promise.reject(new Error('Element is not logged in.'));
     }
-    return client.sendEvent(roomId, 'm.reaction', {
+    let targetRoomId = roomId && typeof client.getRoom === 'function' && client.getRoom(roomId) ? roomId : '';
+    if (!targetRoomId) {
+      const rooms = typeof client.getRooms === 'function' ? client.getRooms() : [];
+      const room = rooms.find((r) => typeof r.findEventById === 'function' && r.findEventById(eventId));
+      targetRoomId = room ? room.roomId : '';
+    }
+    if (!targetRoomId) {
+      return Promise.reject(new Error('No room found for the event.'));
+    }
+    return client.sendEvent(targetRoomId, 'm.reaction', {
       'm.relates_to': { rel_type: 'm.annotation', event_id: eventId, key },
     });
   }
@@ -155,8 +167,8 @@
       const roomId = String(message.roomId || '').trim();
       const eventId = String(message.eventId || '').trim();
       const key = String(message.emoji || '📝');
-      if (!roomId || !eventId) {
-        throw new Error('Missing room or event id.');
+      if (!eventId) {
+        throw new Error('Missing event id.');
       }
       await api.scripting.executeScript({
         target: { tabId },
@@ -165,6 +177,55 @@
         args: [roomId, eventId, key],
       });
       return { ok: true };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  }
+
+  // Runs in the page's MAIN world via scripting.executeScript so it can reach
+  // element-web's own MatrixClient and read the authoritative room name — the
+  // DOM header markup changed across element-web versions, the client did not.
+  function matrixRoomNameFn(roomId) {
+    const peg = typeof window !== 'undefined' && window.mxMatrixClientPeg;
+    const client = peg && typeof peg.safeGet === 'function' ? peg.safeGet() : null;
+    if (!client) {
+      return Promise.reject(new Error('Element is not logged in.'));
+    }
+    const room = client.getRoom(roomId);
+    return room ? room.name : '';
+  }
+
+  async function handleMatrixRoomName(message, sender) {
+    try {
+      let origin = '';
+      try {
+        origin = sender && sender.url ? new URL(sender.url).origin : '';
+      } catch (e) {
+        origin = '';
+      }
+      const patterns = elementInstancePatterns(await getElementInstances());
+      if (!origin || !patterns.includes(`${origin}/*`)) {
+        throw new Error('Request did not come from a registered Element instance.');
+      }
+      if (!api.scripting || typeof api.scripting.executeScript !== 'function') {
+        throw new Error('Scripting API unavailable.');
+      }
+      const tabId = sender && sender.tab && sender.tab.id;
+      if (typeof tabId !== 'number') {
+        throw new Error('No tab to read from.');
+      }
+      const roomId = String(message.roomId || '').trim();
+      if (!roomId) {
+        throw new Error('Missing room id.');
+      }
+      const results = await api.scripting.executeScript({
+        target: { tabId },
+        world: 'MAIN',
+        func: matrixRoomNameFn,
+        args: [roomId],
+      });
+      const name = results && results[0] && results[0].result;
+      return { ok: true, name: String(name || '') };
     } catch (e) {
       return { ok: false, error: e.message };
     }
@@ -199,6 +260,10 @@
     }
     if (message && message.type === 'vikunja.matrix-react') {
       handleMatrixReact(message, sender).then(sendResponse);
+      return true;
+    }
+    if (message && message.type === 'vikunja.matrix-room-name') {
+      handleMatrixRoomName(message, sender).then(sendResponse);
       return true;
     }
   });

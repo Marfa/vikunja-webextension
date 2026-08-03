@@ -11,6 +11,15 @@ class FakeMutationObserver {
 }
 global.MutationObserver = FakeMutationObserver;
 
+// Node has no DOM event constructors; browsers do. Simple shims so the
+// content script's menu-close dispatch can run.
+global.MouseEvent = class MouseEvent {
+  constructor(type, opts = {}) { this.type = type; Object.assign(this, opts); }
+};
+global.KeyboardEvent = class KeyboardEvent {
+  constructor(type, opts = {}) { this.type = type; Object.assign(this, opts); }
+};
+
 function matchPart(el, part) {
   if (!el) return false;
   if (part === '*') return true;
@@ -100,6 +109,10 @@ function makeEl(tag, className) {
     return null;
   };
   el.addEventListener = (t, fn) => { (el.listeners[t] = el.listeners[t] || []).push(fn); };
+  el.dispatchEvent = (evt) => {
+    (el.listeners[evt.type] = el.listeners[evt.type] || []).forEach((fn) => fn(evt));
+    return true;
+  };
   Object.defineProperty(el, 'nextSibling', {
     get() {
       if (!this.parentNode) return null;
@@ -126,7 +139,7 @@ global.chrome = {
     },
   },
 };
-global.location = { hash: '#/room/!abc:server' };
+global.location = { hash: '#/room/!abc:server', pathname: '/' };
 
 const body = makeEl('body');
 const doc = makeEl('document');
@@ -200,17 +213,80 @@ const kebab = makeEl('span', 'mx_MessageActionBar_kebab');
 kebab.setAttribute('role', 'button');
 kebab.setAttribute('aria-label', 'More options');
 barC.appendChild(kebab);
+const longBody = 'This is a very long message that definitely exceeds the fifty character limit for the title and goes on.';
+const tileLong = makeTile(longBody, 'Bob');
+const barLong = makeBar([tileLong], true);
+// A tile whose message body carries real formatting (what element-web renders
+// from the message's formatted_body HTML).
+function makeRichBody(children) {
+  const msgBody = makeEl('span', 'mx_EventTile_body');
+  children.forEach((c) => msgBody.appendChild(c));
+  return msgBody;
+}
+function richEl(tag, attrs, text) {
+  const el = makeEl(tag);
+  (attrs || []).forEach(([k, v]) => el.setAttribute(k, v));
+  if (text) el.textContent = text;
+  return el;
+}
+function makeRichTile(children, senderName) {
+  const tile = makeEl('div', 'mx_EventTile');
+  const line = makeEl('div', 'mx_EventTile_line');
+  if (senderName) {
+    const details = makeEl('span', 'mx_EventTile_senderDetails');
+    const name = makeEl('span', 'mx_DisambiguatedDisplayName');
+    name.textContent = senderName;
+    details.appendChild(name);
+    line.appendChild(details);
+  }
+  line.appendChild(makeRichBody(children));
+  tile.appendChild(line);
+  return tile;
+}
+const tileRich = makeRichTile([
+  richEl('', null, 'Hi '),
+  richEl('strong', null, 'bold'),
+  richEl('', null, ' and '),
+  richEl('em', null, 'italic'),
+  richEl('', null, ' and '),
+  richEl('a', [['href', 'https://example.com/page']], 'link'),
+  richEl('', null, ' and '),
+  richEl('code', null, 'inline()'),
+], 'Alice');
+tileRich.setAttribute('data-event-id', '$msgR:server');
+const barRich = makeBar([tileRich], true);
+const tileMultiline = makeRichTile([
+  richEl('', null, 'Line one'),
+  richEl('br'),
+  richEl('', null, 'Line two'),
+], 'Alice');
+const barMultiline = makeBar([tileMultiline], true);
 const menu = makeMenu();
 body.appendChild(tileA);
 body.appendChild(tileB);
 body.appendChild(barC);
-body.appendChild(menu);
+body.appendChild(tileLong);
+// Real element-web renders the menu inside a portal wrapper with an invisible
+// background; both are exercised by the menu-close behaviour.
+const menuWrapper = makeEl('div', 'mx_ContextualMenu_wrapper');
+const menuBackground = makeEl('div', 'mx_ContextualMenu_background');
+menuWrapper.appendChild(menuBackground);
+menuWrapper.appendChild(menu);
+body.appendChild(menuWrapper);
+// A second menu without a background exercises the Escape fallback.
+const escapeWrapper = makeEl('div', 'mx_ContextualMenu_wrapper');
+const escapeMenu = makeMenu();
+escapeWrapper.appendChild(escapeMenu);
+body.appendChild(escapeWrapper);
+body.appendChild(tileRich);
+body.appendChild(tileMultiline);
 
 global.document = {
   body,
   documentElement: body,
   createElement: (tag) => makeEl(tag),
   querySelectorAll: (sel) => queryAll(doc, sel),
+  querySelector: (sel) => queryAll(doc, sel)[0] || null,
   addEventListener: (type, fn) => { (doc.listeners[type] = doc.listeners[type] || []).push(fn); },
 };
 
@@ -247,26 +323,51 @@ const menuButtonsOf = () => optionList._children.filter((c) => c.getAttribute('a
   assert.equal(buttonsOf(barB).length, 1, 'no duplicate injection on re-scan (fallback bar)');
   assert.equal(menuButtonsOf().length, 1, 'no duplicate injection in the options menu');
 
+  // Activating the injected menu item closes the menu, like element-web's own
+  // items do: it clicks the menu's invisible background…
+  let backgroundClicks = 0;
+  menuBackground.addEventListener('click', () => { backgroundClicks += 1; });
+  menuButtonsOf()[0].listeners.click[0]();
+  assert.equal(backgroundClicks, 1, 'menu background clicked to close it');
+
+  // …and a menu without a background gets an Escape keydown through its wrapper.
+  const escapeMenuButton = escapeMenu._children[0]._children
+    .filter((c) => c.getAttribute('aria-label') === 'Add to Vikunja')[0];
+  let escapeCount = 0;
+  escapeWrapper.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') escapeCount += 1;
+  });
+  escapeMenuButton.listeners.click[0]();
+  assert.equal(escapeCount, 1, 'Escape keydown dispatched to close a background-less menu');
+
+  // Action-bar buttons are not inside a menu wrapper, so nothing is closed.
+  const before = backgroundClicks;
+  buttonsOf(barA)[0].listeners.click[0]();
+  assert.equal(backgroundClicks, before, 'action-bar clicks do not touch the menu background');
+
+  await new Promise((r) => { setTimeout(r, 10); });
+  sentMessages.length = 0;
+
   // Clicking builds the task content and messages the background.
   buttonsOf(barA)[0].listeners.click[0]();
   await new Promise((r) => { setTimeout(r, 10); });
   assert.equal(sentMessages.length, 1);
   assert.equal(sentMessages[0].type, 'vikunja.create-task');
-  assert.equal(sentMessages[0].title, 'Hello from Element');
+  assert.equal(sentMessages[0].title, 'Test Room: Hello from Element');
   assert.equal(
     sentMessages[0].description,
-    'From Test Room by Alice\n\n[View message](https://matrix.to/#/!abc:server/%24msgA%3Aserver)',
-    'description has room, sender and message-level permalink',
+    'Hello from Element\n\n[View message](https://matrix.to/#/!abc:server/%24msgA%3Aserver)',
+    'description holds the full message and the message-level permalink',
   );
 
   // Message without a sender still works.
   buttonsOf(barB)[0].listeners.click[0]();
   await new Promise((r) => { setTimeout(r, 10); });
   assert.equal(sentMessages.length, 2);
-  assert.equal(sentMessages[1].title, 'Second message');
+  assert.equal(sentMessages[1].title, 'Test Room: Second message');
   assert.equal(
     sentMessages[1].description,
-    'From Test Room\n\n[View message](https://matrix.to/#/!abc:server)',
+    'Second message\n\n[View message](https://matrix.to/#/!abc:server)',
     'room-level permalink used without a sender',
   );
 
@@ -276,11 +377,50 @@ const menuButtonsOf = () => optionList._children.filter((c) => c.getAttribute('a
   menuButtonsOf()[0].listeners.click[0]();
   await new Promise((r) => { setTimeout(r, 10); });
   assert.equal(sentMessages.length, 3);
-  assert.equal(sentMessages[2].title, 'Hello from Element', 'menu button uses the tracked tile');
+  assert.equal(sentMessages[2].title, 'Test Room: Hello from Element', 'menu button uses the tracked tile');
   assert.equal(
     sentMessages[2].description,
-    'From Test Room by Alice\n\n[View message](https://matrix.to/#/!abc:server/%24msgA%3Aserver)',
+    'Hello from Element\n\n[View message](https://matrix.to/#/!abc:server/%24msgA%3Aserver)',
     'menu button description from the tracked tile',
+  );
+
+  // A message longer than 50 characters is truncated in the title; the full
+  // message stays in the description.
+  buttonsOf(barLong)[0].listeners.click[0]();
+  await new Promise((r) => { setTimeout(r, 10); });
+  assert.equal(sentMessages.length, 4);
+  assert.equal(sentMessages[3].title, `Test Room: ${longBody.slice(0, 50)}…`, 'title truncates the message at 50 chars');
+  assert.equal(
+    sentMessages[3].description,
+    `${longBody}\n\n[View message](https://matrix.to/#/!abc:server)`,
+    'description keeps the full message',
+  );
+
+  // A formatted message keeps its markup in the description while the title
+  // stays plain text.
+  buttonsOf(barRich)[0].listeners.click[0]();
+  await new Promise((r) => { setTimeout(r, 10); });
+  assert.equal(sentMessages.length, 5);
+  assert.equal(
+    sentMessages[4].title,
+    'Test Room: Hi bold and italic and link and inline()',
+    'title strips markup',
+  );
+  assert.equal(
+    sentMessages[4].description,
+    'Hi **bold** and *italic* and [link](https://example.com/page) and `inline()`\n\n'
+      + '[View message](https://matrix.to/#/!abc:server/%24msgR%3Aserver)',
+    'description converts HTML to Markdown',
+  );
+
+  // <br> becomes a newline in the description.
+  buttonsOf(barMultiline)[0].listeners.click[0]();
+  await new Promise((r) => { setTimeout(r, 10); });
+  assert.equal(sentMessages.length, 6);
+  assert.equal(
+    sentMessages[5].description,
+    'Line one\nLine two\n\n[View message](https://matrix.to/#/!abc:server)',
+    'line breaks survive into the description',
   );
 
   // A failed create surfaces as an error toast.
@@ -339,6 +479,92 @@ const menuButtonsOf = () => optionList._children.filter((c) => c.getAttribute('a
   buttonsOf(barA)[0].listeners.click[0]();
   await delay(10);
   assert.equal(toast.textContent, 'Added to Vikunja.', 'reaction failure does not break the success toast');
+  mocks.sendMessage = async (msg) => { sentMessages.push(msg); return { ok: true, task: { id: 1 } }; };
+
+  // Path-based routing (useHashRouting: false) still yields the room id — from
+  // the pathname — for both the permalink and the reaction.
+  global.location = { hash: '', pathname: '/app/room/!def:server' };
+  sentMessages.length = 0;
+  mocks.prefs = { elementReactAfterAdd: true };
+  buttonsOf(barA)[0].listeners.click[0]();
+  await delay(10);
+  const reactionPath = sentMessages.find((m) => m.type === 'vikunja.matrix-react');
+  assert.ok(reactionPath, 'reaction requested under path routing');
+  assert.equal(reactionPath.roomId, '!def:server', 'room id read from the pathname');
+  const createPath = sentMessages.find((m) => m.type === 'vikunja.create-task');
+  assert.equal(
+    createPath.description,
+    'Hello from Element\n\n[View message](https://matrix.to/#/!def:server/%24msgA%3Aserver)',
+    'permalink uses the room id from the pathname',
+  );
+
+  // With no room id in the URL at all the reaction is still sent — the
+  // background resolves the room from the event id instead.
+  global.location = { hash: '', pathname: '/' };
+  sentMessages.length = 0;
+  buttonsOf(barA)[0].listeners.click[0]();
+  await delay(10);
+  const reactionNoRoom = sentMessages.find((m) => m.type === 'vikunja.matrix-react');
+  assert.ok(reactionNoRoom, 'reaction requested without a room id in the URL');
+  assert.equal(reactionNoRoom.roomId, '', 'empty room id passed through to the background');
+  global.location = { hash: '#/room/!abc:server', pathname: '/' };
+
+  // The current element-web renders the room name in .mx_RoomHeader_truncated.
+  body.removeChild(header);
+  const truncated = makeEl('h1', 'mx_RoomHeader_heading');
+  const truncSpan = makeEl('span', 'mx_RoomHeader_truncated');
+  truncSpan.textContent = 'Truncated Room';
+  truncated.appendChild(truncSpan);
+  body.insertBefore(truncated, body._children[0]);
+  sentMessages.length = 0;
+  buttonsOf(barB)[0].listeners.click[0]();
+  await delay(10);
+  assert.equal(
+    sentMessages[0].title,
+    'Truncated Room: Second message',
+    'room name read from the current header markup',
+  );
+  assert.ok(
+    !sentMessages.some((m) => m.type === 'vikunja.matrix-room-name'),
+    'no client fallback when the DOM header is present',
+  );
+
+  // Without any header markup the room name falls back to the MatrixClient.
+  body.removeChild(truncated);
+  sentMessages.length = 0;
+  mocks.sendMessage = async (msg) => {
+    sentMessages.push(msg);
+    if (msg.type === 'vikunja.matrix-room-name') return { ok: true, name: 'Client Room' };
+    return { ok: true, task: { id: 1 } };
+  };
+  buttonsOf(barB)[0].listeners.click[0]();
+  await delay(10);
+  const createViaFallback = sentMessages.find((m) => m.type === 'vikunja.create-task');
+  assert.equal(
+    createViaFallback.title,
+    'Client Room: Second message',
+    'title falls back to the client room name',
+  );
+  assert.ok(
+    sentMessages.some((m) => m.type === 'vikunja.matrix-room-name' && m.roomId === '!abc:server'),
+    'client fallback queried with the room id from the hash',
+  );
+
+  // A failing client fallback leaves the room name out rather than breaking.
+  sentMessages.length = 0;
+  mocks.sendMessage = async (msg) => {
+    sentMessages.push(msg);
+    if (msg.type === 'vikunja.matrix-room-name') return { ok: false, error: 'not registered' };
+    return { ok: true, task: { id: 1 } };
+  };
+  buttonsOf(barB)[0].listeners.click[0]();
+  await delay(10);
+  assert.equal(
+    sentMessages.find((m) => m.type === 'vikunja.create-task').title,
+    'Second message',
+    'no room name when the fallback fails',
+  );
+  mocks.sendMessage = async (msg) => { sentMessages.push(msg); return { ok: true, task: { id: 1 } }; };
 
   console.log('CONTENT SMOKE: ALL PASS');
 })().catch((e) => { console.error('FAIL', e); process.exit(1); });
