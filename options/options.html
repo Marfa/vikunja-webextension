@@ -37,11 +37,18 @@
       <li><code>tasks</code> &mdash; read_all, create, update</li>
       <li><code>other</code> &mdash; user</li>
     </ul>
-    <p class="hint">
-      If you use the Quick Add Magic syntax in the popup (<code>*label</code>, <code>+project</code>,
-      <code>!priority</code>, <code>@assignee</code>), also grant <code>labels</code> read_all &amp; create,
-      <code>tasks_labels</code> create, and <code>projects_users</code> read_all.
-    </p>
+    <p class="hint">The optional features below need a few more scopes:</p>
+    <ul class="permissions">
+      <li>
+        <strong>Quick Add Magic</strong> in the popup (<code>*label</code>, <code>+project</code>,
+        <code>!priority</code>, <code>@assignee</code>): <code>labels</code> read_all &amp; create,
+        <code>tasks_labels</code> create, <code>projects_users</code> read_all
+      </li>
+      <li>
+        <strong>Element auto-assign tag</strong> (below): <code>labels</code> read_all &amp; create,
+        <code>tasks_labels</code> create
+      </li>
+    </ul>
 
     <h2>Defaults</h2>
     <label for="default-project">Default project</label>
@@ -86,33 +93,47 @@
     />
     <p class="hint">Applied to the popup task list. Setting a custom filter replaces the default <code>done = false</code> filter (which hides completed tasks). See <a href="https://vikunja.io/docs/filters" target="_blank" rel="noopener noreferrer">vikunja.io/docs/filters</a>.</p>
 
+    <section id="integrations">
+      <h2>Integrations</h2>
+      <p class="hint">
+        Add a Matrix Element web instance to get an &ldquo;Add to Vikunja&rdquo; button on every message.
+        The extension asks for permission to read the page, then adds the task through your Vikunja connection.
+      </p>
+      <ul id="element-instances" class="instances"></ul>
+      <div class="actions">
+        <button type="button" id="add-element" class="secondary">Add Element instance</button>
+      </div>
+      <label class="checkbox">
+        <input type="checkbox" id="element-react-after-add" name="elementReactAfterAdd" />
+        <span>React with 📝 to the message after adding it to Vikunja</span>
+      </label>
+      <p class="hint">
+        After a message is added as a task, Element reacts to it with 📝 so everyone
+        in the room can see it was captured. The reaction is sent by Element itself
+        using your logged-in session.
+      </p>
+
+      <label for="element-tag">Auto-assign tag</label>
+      <input
+        type="text"
+        id="element-tag"
+        name="elementTag"
+        placeholder="e.g. from-element"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <p class="hint">
+        Every task added from Element gets this tag. Leave empty to add tasks without
+        a tag. The tag is created in Vikunja automatically if it does not exist yet.
+      </p>
+    </section>
+
     <div class="actions">
       <button type="submit" id="save">Save</button>
       <button type="button" id="test" class="secondary">Test connection</button>
     </div>
 
   </form>
-
-  <section id="integrations">
-    <h2>Integrations</h2>
-    <p class="hint">
-      Add a Matrix Element web instance to get an &ldquo;Add to Vikunja&rdquo; button on every message.
-      The extension asks for permission to read the page, then adds the task through your Vikunja connection.
-    </p>
-    <ul id="element-instances" class="instances"></ul>
-    <div class="actions">
-      <button type="button" id="add-element" class="secondary">Add Element instance</button>
-    </div>
-    <label class="checkbox">
-      <input type="checkbox" id="element-react-after-add" name="elementReactAfterAdd" />
-      <span>React with 📝 to the message after adding it to Vikunja</span>
-    </label>
-    <p class="hint">
-      After a message is added as a task, Element reacts to it with 📝 so everyone
-      in the room can see it was captured. The reaction is sent by Element itself
-      using your logged-in session.
-    </p>
-  </section>
 
   <dialog id="element-dialog">
     <form id="element-form" novalidate>

@@ -24,6 +24,7 @@
   const elementAddBtn = document.getElementById('element-add');
   const elementCancelBtn = document.getElementById('element-cancel');
   const elementReactAfterAddInput = document.getElementById('element-react-after-add');
+  const elementTagInput = document.getElementById('element-tag');
 
   let projects = [];
   let elementInstances = [];
@@ -54,6 +55,7 @@
       sortBy: sortByInput.value || 'position',
       rememberLastSort: rememberLastSortInput.checked,
       elementReactAfterAdd: elementReactAfterAddInput.checked,
+      elementTag: elementTagInput.value.trim(),
     };
   }
 
@@ -88,6 +90,7 @@
     sortByInput.value = prefs.sortBy || 'position';
     rememberLastSortInput.checked = prefs.rememberLastSort;
     elementReactAfterAddInput.checked = Boolean(prefs.elementReactAfterAdd);
+    elementTagInput.value = prefs.elementTag || '';
     elementInstances = instances;
     renderElementInstances();
     if (config.baseUrl && config.token) {

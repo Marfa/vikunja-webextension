@@ -66,7 +66,7 @@ const VikunjaLib = {
   },
   normalizeBaseUrl: (u) => (u ? u.replace(/\/+$/, '') : ''),
   getConfig: () => Promise.resolve({ baseUrl: 'https://try.vikunja.io', token: 'tk_test' }),
-  getPrefs: () => Promise.resolve({ defaultProjectId: 1, dueToday: true, customFilter: 'priority >= 1', sortBy: 'due_date', rememberLastSort: true, elementReactAfterAdd: true }),
+  getPrefs: () => Promise.resolve({ defaultProjectId: 1, dueToday: true, customFilter: 'priority >= 1', sortBy: 'due_date', rememberLastSort: true, elementReactAfterAdd: true, elementTag: 'from-element' }),
   listProjects: () => Promise.resolve(projects),
   listTasks: () => Promise.resolve([]),
   createTask: (projectId, body) => { calls.createTask.push({ projectId, body }); return Promise.resolve({ id: 1 }); },
@@ -109,6 +109,7 @@ const root = path.join(__dirname, '..');
   assert(ids['sort-by'].value === 'due_date', 'options: default sort filled, got ' + ids['sort-by'].value);
   assert(ids['remember-last-sort'].checked === true, 'options: remember-last-sort checked');
   assert(ids['element-react-after-add'].checked === true, 'options: element-react-after-add checked');
+  assert(ids['element-tag'].value === 'from-element', 'options: element-tag filled, got ' + ids['element-tag'].value);
   assert(ids['default-project'].options.length === 3, 'options: default-project select filled');
 
   ids['base-url'].value = 'https://try.vikunja.io/';
@@ -121,6 +122,7 @@ const root = path.join(__dirname, '..');
   assert(calls.syncSet[0].sortBy === 'due_date', 'options: sort preserved');
   assert(calls.syncSet[0].rememberLastSort === true, 'options: remember-last-sort preserved');
   assert(calls.syncSet[0].elementReactAfterAdd === true, 'options: element-react-after-add preserved');
+  assert(calls.syncSet[0].elementTag === 'from-element', 'options: element-tag preserved');
   assert(calls.hostRequest.length === 1, 'options: save requests host permissions');
   assert(calls.hostRequest[0].length === 1 && calls.hostRequest[0][0] === 'https://try.vikunja.io/*', 'options: save requests all host patterns');
 

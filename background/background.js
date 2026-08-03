@@ -15,6 +15,8 @@
     getPrefs,
     listProjects,
     createTask,
+    addLabelToTask,
+    findOrCreateLabel,
     dueTodayISO,
   } = globalThis.VikunjaLib;
 
@@ -110,6 +112,19 @@
         body.due_date = dueTodayISO();
       }
       const task = await createTask(projectId, body);
+      // Auto-assign the configured tag. Best-effort like the popup: a missing
+      // label permission must never break the add itself.
+      const tag = String(prefs.elementTag || '').trim();
+      if (tag && task && task.id) {
+        try {
+          const label = await findOrCreateLabel(tag);
+          if (label && label.id) {
+            await addLabelToTask(task.id, label.id);
+          }
+        } catch (e) {
+          // Skip tag assignment on any failure; the task was already created.
+        }
+      }
       return { ok: true, task };
     } catch (e) {
       return { ok: false, error: e.message };

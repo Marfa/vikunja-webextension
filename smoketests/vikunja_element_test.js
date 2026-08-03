@@ -17,8 +17,9 @@ const listeners = {
   onInstalled: [], onStartup: [], onChanged: [], onAdded: [], onRemoved: [],
   onMessage: [], onClicked: [], onCommand: [],
 };
-const calls = { createTask: [], sync: [] };
+const calls = { createTask: [], sync: [], labelCalls: [] };
 const projects = [{ id: 1, title: 'Work' }, { id: 2, title: 'Home' }];
+const labelStore = { labels: [], attachCalls: [] };
 
 global.chrome = {
   storage: {
@@ -69,6 +70,24 @@ global.chrome = {
 global.fetch = async (url, opts) => {
   const u = new URL(url);
   const pathname = u.pathname;
+  if (pathname === '/api/v2/labels') {
+    if (opts && opts.method === 'POST') {
+      const body = JSON.parse(opts.body);
+      const created = { id: 90, title: body.title, hex_color: body.hex_color };
+      labelStore.labels.push(created);
+      calls.labelCalls.push('create');
+      return { ok: true, headers: { get: () => null }, text: async () => JSON.stringify(created) };
+    }
+    calls.labelCalls.push('list');
+    return { ok: true, headers: { get: () => null }, text: async () => JSON.stringify({ items: labelStore.labels, total_pages: 1 }) };
+  }
+  if (/^\/api\/v2\/tasks\/\d+\/labels$/.test(pathname)) {
+    assert.equal(opts.method, 'POST', 'expected POST for label attach');
+    calls.labelCalls.push('attach');
+    const body = JSON.parse(opts.body);
+    labelStore.attachCalls.push({ taskId: Number(pathname.split('/')[4]), labelId: body.label_id });
+    return { ok: true, headers: { get: () => null }, text: async () => JSON.stringify(body) };
+  }
   if (opts && opts.method === 'POST') {
     assert.match(pathname, /\/api\/v2\/projects\/\d+\/tasks$/, 'expected task create URL, got ' + url);
     assert.equal(u.searchParams.get('format'), 'markdown', 'task create requests markdown descriptions');
@@ -162,6 +181,52 @@ const sendRaw = (message, sender) => new Promise((resolve) => {
   res = await send({ type: 'vikunja.create-task', title: '   ' }, 'https://element.example');
   assert.equal(res.ok, false);
   assert.ok(res.error.includes('No message text'), 'empty title rejected, got ' + res.error);
+
+  // --- Auto-assign tag ---
+
+  // No tag configured -> no label traffic at all.
+  store.elementTag = '';
+  labelStore.labels = [];
+  labelStore.attachCalls = [];
+  calls.labelCalls = [];
+  res = await send({ type: 'vikunja.create-task', title: 'No tag' }, 'https://element.example');
+  assert.equal(res.ok, true, 'task created without a tag, got ' + JSON.stringify(res));
+  assert.deepStrictEqual(calls.labelCalls, [], 'no label calls without a tag');
+
+  // Existing tag -> the label is found and attached after the task is created.
+  labelStore.labels = [{ id: 42, title: 'from-element' }];
+  store.elementTag = 'from-element';
+  labelStore.attachCalls = [];
+  calls.labelCalls = [];
+  res = await send({ type: 'vikunja.create-task', title: 'With tag' }, 'https://element.example');
+  assert.equal(res.ok, true, 'task created with tag, got ' + JSON.stringify(res));
+  assert.deepStrictEqual(calls.labelCalls, ['list', 'attach'], 'lists labels then attaches the existing one');
+  assert.deepStrictEqual(labelStore.attachCalls.at(-1), { taskId: 5, labelId: 42 }, 'attaches the existing label id');
+
+  // Missing tag -> the label is created first, then attached.
+  labelStore.labels = [];
+  labelStore.attachCalls = [];
+  calls.labelCalls = [];
+  res = await send({ type: 'vikunja.create-task', title: 'New tag' }, 'https://element.example');
+  assert.equal(res.ok, true);
+  assert.deepStrictEqual(calls.labelCalls, ['list', 'create', 'attach'], 'creates a missing label then attaches it');
+  assert.equal(labelStore.attachCalls.at(-1).labelId, 90, 'attaches the newly created label');
+
+  // A failed attach is best-effort: the task is still created.
+  labelStore.labels = [{ id: 42, title: 'from-element' }];
+  const hadFetch = global.fetch;
+  global.fetch = async (url, opts) => {
+    const u = new URL(url);
+    if (/^\/api\/v2\/tasks\/\d+\/labels$/.test(u.pathname)) {
+      return { ok: false, status: 403, headers: { get: () => null }, text: async () => JSON.stringify({ message: 'forbidden' }) };
+    }
+    return hadFetch(url, opts);
+  };
+  calls.labelCalls = [];
+  res = await send({ type: 'vikunja.create-task', title: 'Tag fail' }, 'https://element.example');
+  assert.equal(res.ok, true, 'task is created even when the tag attach fails, got ' + JSON.stringify(res));
+  global.fetch = hadFetch;
+  store.elementTag = '';
 
   // --- Reaction (📝) via element-web's own MatrixClient (MAIN world) ---
 

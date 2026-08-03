@@ -90,7 +90,7 @@ const V = globalThis.VikunjaLib;
 
 (async () => {
   const prefs = await V.getPrefs();
-  assert.deepStrictEqual(prefs, { defaultProjectId: '7', dueToday: true, customFilter: 'done = false', sortBy: 'position', rememberLastSort: false, elementReactAfterAdd: false });
+  assert.deepStrictEqual(prefs, { defaultProjectId: '7', dueToday: true, customFilter: 'done = false', sortBy: 'position', rememberLastSort: false, elementReactAfterAdd: false, elementTag: '' });
 
   assert.deepStrictEqual(V.hostPermissionPatterns({ baseUrl: 'https://vikunja.example' }), ['https://vikunja.example/*']);
   assert.deepStrictEqual(V.hostPermissionPatterns({ baseUrl: 'https://vikunja.example:8443' }), ['https://vikunja.example:8443/*']);
@@ -205,6 +205,20 @@ const V = globalThis.VikunjaLib;
   await V.addLabelToTask(5, 90);
   assert.ok(calls[0].url.includes('/api/v2/tasks/5/labels'));
   assert.deepStrictEqual(JSON.parse(calls[0].opts.body), { label_id: 90 });
+
+  // findOrCreateLabel returns an existing label matched case-insensitively.
+  calls.length = 0;
+  const existingLabel = await V.findOrCreateLabel('ITEM 1');
+  assert.equal(existingLabel.id, 1, 'reuses the existing label');
+  assert.ok(calls[0].url.includes('/api/v2/labels'), 'lists labels to find the match');
+
+  // ...and creates the label when the title does not exist yet.
+  calls.length = 0;
+  const newLabel = await V.findOrCreateLabel('from-element');
+  assert.equal(newLabel.id, 90, 'creates a missing label');
+  assert.ok(calls.some((c) => c.opts && c.opts.method === 'POST' && c.url.includes('/api/v2/labels')), 'creates via label POST');
+
+  await assert.rejects(() => V.findOrCreateLabel('   '), /No label title/, 'rejects empty titles');
 
   calls.length = 0;
   await V.addAssigneeToTask(5, 7);
