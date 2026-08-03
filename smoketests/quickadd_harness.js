@@ -1,5 +1,7 @@
 'use strict';
 const path = require('path');
+global.chrome = { storage: { sync: { get: async () => ({}) } } };
+require(path.join(__dirname, '..', 'lib/vikunja.js'));
 require(path.join(__dirname, '..', 'lib/quick-add.js'));
 const { parseTaskText, PrefixMode, analyzeTaskText, removeSpan } = globalThis.QuickAdd;
 
@@ -327,6 +329,55 @@ for (const input of roundTrip) {
   let out = input;
   for (const s of spans) out = removeSpan(out, s.start, s.end);
   eq(out.trim(), parseTaskText(input).text, `at roundtrip ${input}`);
+}
+
+// A removed token between the title and the date/repeat must not be swallowed
+// into the mapped date/repeat span (regression: "Test !5 tomorrow" showed
+// "!5 tomorrow" as the due-date chip).
+const straddleCases = [
+  { input: 'Test !5 tomorrow', date: 'tomorrow', repeat: null },
+  { input: 'Test !5 today', date: 'today', repeat: null },
+  { input: 'Test !5 at 15:00', date: 'at 15:00', repeat: null },
+  { input: 'Water !3 tomorrow', date: 'tomorrow', repeat: null },
+  { input: 'buy milk !2 in 2 days', date: 'in 2 days', repeat: null },
+  { input: 'Call +Work !1 next monday', date: 'next monday', repeat: null },
+  { input: 'Test *label tomorrow', date: 'tomorrow', repeat: null },
+  { input: 'Test !5 every day', date: null, repeat: 'every day' },
+  { input: 'Test !5 every day tomorrow', date: 'tomorrow', repeat: 'every day' },
+  { input: 'every day !5 tomorrow', date: 'tomorrow', repeat: 'every day' },
+  { input: 'tomorrow !5 Test', date: 'tomorrow', repeat: null },
+];
+for (const { input, date, repeat } of straddleCases) {
+  const a = at(input);
+  const slice = (o) => (o === null ? null : input.slice(o.start, o.end).trim());
+  eq(slice(a.date), date, `straddle ${input} date span`);
+  eq(slice(a.repeats), repeat, `straddle ${input} repeat span`);
+  // Removing just the date/repeat span must keep the preceding magic token.
+  const tokenBefore = a.project || a.priority || a.labels[0];
+  if (a.date !== null) {
+    const out = removeSpan(input, a.date.start, a.date.end);
+    ok(out.includes(tokenBefore.text), `straddle ${input} date removal keeps ${tokenBefore.text}`);
+  }
+  if (a.repeats !== null) {
+    const out = removeSpan(input, a.repeats.start, a.repeats.end);
+    ok(out.includes(tokenBefore.text), `straddle ${input} repeat removal keeps ${tokenBefore.text}`);
+  }
+}
+// todoist mode: same swallowing issue applies
+const td1 = at('#Home !2 tomorrow', PrefixMode.Todoist);
+eq('#Home !2 tomorrow'.slice(td1.date.start, td1.date.end).trim(), 'tomorrow', 'todoist straddle date span');
+ok(removeSpan('#Home !2 tomorrow', td1.date.start, td1.date.end).includes('#Home'), 'todoist straddle keeps project');
+
+// The "due today" default must round to the same hour as a parsed date.
+// Both go through VikunjaLib.calculateNearestHours.
+{
+  const { calculateNearestHours, dueTodayISO } = globalThis.VikunjaLib;
+  for (const t of ['09:00', '09:01', '12:00', '12:30', '15:00', '15:30', '18:00', '18:30', '21:00', '21:30']) {
+    const d = new Date('2026-08-03T' + t + ':00');
+    const expected = new Date(d);
+    expected.setHours(calculateNearestHours(d), 0, 0, 0);
+    eq(dueTodayISO(d), expected.toISOString(), 'dueTodayISO hour ' + t);
+  }
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

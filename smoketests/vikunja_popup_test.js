@@ -173,6 +173,19 @@ const VikunjaLib = {
     return Promise.resolve();
   },
   dueTodayISO: () => '2026-08-02T12:00:00.000Z',
+  // Mirrors lib/vikunja.js; the real function is regression-tested in
+  // quickadd_harness.js against dueTodayISO.
+  calculateNearestHours(d = new Date()) {
+    const hours = d.getHours();
+    const minutes = d.getMinutes();
+    const isBeforeOrAt = (b) => hours < b || (hours === b && minutes === 0);
+    if (isBeforeOrAt(9) || hours > 21) return 9;
+    if (isBeforeOrAt(12)) return 12;
+    if (isBeforeOrAt(15)) return 15;
+    if (isBeforeOrAt(18)) return 18;
+    if (isBeforeOrAt(21)) return 21;
+    return 9;
+  },
   buildTaskContent: (base, tab) => Object.assign({}, base, { tabUrl: tab && tab.url, tabTitle: tab && tab.title }),
   getActiveTab: () => Promise.resolve({ url: 'https://example.com', title: 'Example' }),
   openCapture: (content) => {
@@ -192,6 +205,7 @@ global.document = {
 };
 
 global.window.VikunjaLib = VikunjaLib;
+globalThis.VikunjaLib = VikunjaLib;
 
 const projectRoot = path.join(__dirname, '..');
 const quickAddSrc = fs.readFileSync(path.join(projectRoot, 'lib/quick-add.js'), 'utf8');
@@ -296,6 +310,27 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   await getSubmit()({ preventDefault() {} });
   assert(calls.createTask.length === 5 && calls.createTask[4].data.title === '+Home Raw *text', 'disabled mode keeps magic text as title');
   assert(calls.createTask[4].projectId === 1, 'disabled mode uses chip-selected project');
+
+  // dueToday default applies to pure-magic input (entire line is magic)
+  quickAddModeMock = 'vikunja';
+  VikunjaLib.getPrefs = () => Promise.resolve({ defaultProjectId: null, dueToday: true, customFilter: '' });
+  ids['quick-title'].value = '';
+  eval(src);
+  await new Promise((r) => setTimeout(r, 20));
+  ids['quick-title'].value = '+Home';
+  await getSubmit()({ preventDefault() {} });
+  assert(calls.createTask.length === 6 && calls.createTask[5].data.due_date === '2026-08-02T12:00:00.000Z', 'pure-magic quick add applies dueToday default, got ' + JSON.stringify(calls.createTask[5].data));
+  assert(calls.createTask[5].data.title === '+Home', 'pure-magic title kept raw, got ' + JSON.stringify(calls.createTask[5].data.title));
+
+  // date chip: the dueToday pref colors it and "today" appears only once
+  // (as the placeholder, not duplicated as a selectable preset)
+  const dueChips = () => ids['quick-chips'].childNodes;
+  ids['quick-title'].value = 'Water';
+  triggerInput();
+  const dueDateChip = dueChips().find((c) => c.className.includes('chip--date'));
+  assert(!!dueDateChip, 'date chip present with dueToday pref');
+  assert(dueDateChip.options.filter((o) => o._text === 'today').length === 1, 'date chip shows today once (placeholder only), got ' + JSON.stringify(dueDateChip.options.map((o) => o._text)));
+
 
   // Logo opens the instance
   const opened = [];

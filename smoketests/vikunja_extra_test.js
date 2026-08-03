@@ -60,6 +60,10 @@ const VikunjaLib = {
       },
     },
     runtime: { openOptionsPage() {}, getURL: (p) => p },
+    permissions: {
+      request: async () => true,
+      contains: async () => true,
+    },
   },
   normalizeBaseUrl: (u) => (u ? u.replace(/\/+$/, '') : ''),
   getConfig: () => Promise.resolve({ baseUrl: 'https://try.vikunja.io', token: 'tk_test' }),

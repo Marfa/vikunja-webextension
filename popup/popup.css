@@ -198,28 +198,28 @@ body {
 
 .chip--project {
   color: var(--blue);
-  background: rgba(25, 106, 255, 0.12);
+  background-color: rgba(25, 106, 255, 0.12);
 }
 
 .chip--priority {
   color: var(--orange);
-  background: rgba(249, 115, 22, 0.12);
+  background-color: rgba(249, 115, 22, 0.12);
 }
 
 .chip--label {
   color: var(--purple);
-  background: rgba(139, 92, 246, 0.12);
+  background-color: rgba(139, 92, 246, 0.12);
 }
 
 .chip--assignee {
   color: var(--green);
-  background: rgba(22, 163, 74, 0.12);
+  background-color: rgba(22, 163, 74, 0.12);
 }
 
 .chip--date,
 .chip--repeat {
   color: var(--teal);
-  background: rgba(13, 148, 136, 0.12);
+  background-color: rgba(13, 148, 136, 0.12);
 }
 
 .quick-add {

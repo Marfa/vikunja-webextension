@@ -288,8 +288,12 @@
     const has = tokens.date !== null;
     const sel = makeChip(has || prefs.dueToday ? 'date' : '');
     sel.title = 'Due Date';
-    sel.appendChild(chipOption('', has ? tokens.date.text : prefs.dueToday ? 'today' : 'Due'));
+    const placeholder = has ? tokens.date.text : prefs.dueToday ? 'today' : 'Due';
+    sel.appendChild(chipOption('', placeholder));
     for (const preset of DATE_PRESETS) {
+      // The placeholder already shows the current value (or the dueToday
+      // default "today"); don't repeat it as a selectable preset.
+      if (preset.toLowerCase() === placeholder.toLowerCase()) continue;
       sel.appendChild(chipOption(preset, preset));
     }
     sel.value = '';
@@ -822,7 +826,11 @@
           quickTitle.focus();
           return;
         }
-        const created = await createTask(currentProjectId, { title: rawTitle });
+        const body = { title: rawTitle };
+        if (parsed.date === null && prefs.dueToday) {
+          body.due_date = dueTodayISO();
+        }
+        const created = await createTask(currentProjectId, body);
         uiShowToast(toastEl, 'Task added.');
         quickTitle.value = '';
         renderChips();
