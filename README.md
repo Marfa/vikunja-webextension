@@ -101,5 +101,5 @@ permissions listed on the page, and you are ready to go.
 ## Packaging as an `.xpi`
 
 ```sh
-zip -r vikunja.xpi manifest.json background icons lib options popup capture styles -x 'icons/icon.svg'
+zip -r vikunja.xpi manifest.json background capture content icons lib options popup capture styles -x 'icons/icon.svg'
 ```
