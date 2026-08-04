@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Vikunja Settings</title>
+  <title data-i18n="optionsTitle">Vikunja Settings</title>
   <link rel="stylesheet" href="../styles/common.css" />
   <link rel="stylesheet" href="options.css" />
 </head>
 <body>
   <form id="settings-form" novalidate>
-    <h2>Connection</h2>
-    <label for="base-url">Vikunja URL</label>
+    <h2 data-i18n="optionsConnection">Connection</h2>
+    <label for="base-url" data-i18n="labelBaseUrl">Vikunja URL</label>
     <input
       type="url"
       id="base-url"
@@ -19,9 +19,9 @@
       spellcheck="false"
       required
     />
-    <p class="hint">The address of your Vikunja instance, without a trailing slash.</p>
+    <p class="hint" data-i18n="hintBaseUrl">The address of your Vikunja instance, without a trailing slash.</p>
 
-    <label for="token">API Token</label>
+    <label for="token" data-i18n="labelToken">API Token</label>
     <input
       type="password"
       id="token"
@@ -31,58 +31,47 @@
       spellcheck="false"
       required
     />
-    <p class="hint">Create an API token in Vikunja under Settings &rarr; API Tokens. Give the token at least these permissions:</p>
+    <p class="hint" data-i18n="hintToken">Create an API token in Vikunja under Settings → API Tokens. Give the token at least these permissions:</p>
     <ul class="permissions">
       <li><code>projects</code> &mdash; read_all</li>
       <li><code>tasks</code> &mdash; read_all, create, update</li>
       <li><code>other</code> &mdash; user</li>
     </ul>
-    <p class="hint">The optional features below need a few more scopes:</p>
+    <p class="hint" data-i18n="hintOptionalScopes">The optional features below need a few more scopes:</p>
     <ul class="permissions">
-      <li>
-        <strong>Quick Add Magic</strong> in the popup (<code>*label</code>, <code>+project</code>,
-        <code>!priority</code>, <code>@assignee</code>): <code>labels</code> read_all &amp; create,
-        <code>tasks_labels</code> create, <code>projects_users</code> read_all
-      </li>
-      <li>
-        <strong>Element auto-assign tag</strong> (below): <code>labels</code> read_all &amp; create,
-        <code>tasks_labels</code> create
-      </li>
+      <li data-i18n-html="scopeQuickAddMagic"><strong>Quick Add Magic</strong> in the popup (<code>*label</code>, <code>+project</code>, <code>!priority</code>, <code>@assignee</code>): <code>labels</code> read_all &amp; create, <code>tasks_labels</code> create, <code>projects_users</code> read_all</li>
+      <li data-i18n-html="scopeElementTag"><strong>Element auto-assign tag</strong> (below): <code>labels</code> read_all &amp; create, <code>tasks_labels</code> create</li>
     </ul>
 
-    <h2>Defaults</h2>
-    <label for="default-project">Default project</label>
+    <h2 data-i18n="optionsDefaults">Defaults</h2>
+    <label for="default-project" data-i18n="labelDefaultProject">Default project</label>
     <select id="default-project" name="defaultProjectId"></select>
-    <p class="hint">Tasks added from the popup and the capture window default to this project.</p>
+    <p class="hint" data-i18n="hintDefaultProject">Tasks added from the popup and the capture window default to this project.</p>
 
     <label class="checkbox">
       <input type="checkbox" id="due-today" name="dueToday" />
-      <span>Set due date to today by default</span>
+      <span data-i18n="labelDueTodayDefault">Set due date to today by default</span>
     </label>
-    <p class="hint">New tasks get a due date of today (at Vikunja&rsquo;s nearest-hour time).</p>
+    <p class="hint" data-i18n="hintDueTodayDefault">New tasks get a due date of today (at Vikunja's nearest-hour time).</p>
 
-    <label for="sort-by">Default sort order</label>
+    <label for="sort-by" data-i18n="labelSortBy">Default sort order</label>
     <select id="sort-by" name="sortBy">
-      <option value="position">Manually sorted</option>
-      <option value="title">Title</option>
-      <option value="created">Created (newest first)</option>
-      <option value="updated">Updated</option>
-      <option value="due_date">Due date</option>
-      <option value="priority">Priority</option>
+      <option value="position" data-i18n="sortManually">Manually sorted</option>
+      <option value="title" data-i18n="sortByTitle">Title</option>
+      <option value="created" data-i18n="sortByCreated">Created</option>
+      <option value="updated" data-i18n="sortByUpdated">Updated</option>
+      <option value="due_date" data-i18n="sortByDueDate">Due date</option>
+      <option value="priority" data-i18n="sortByPriority">Priority</option>
     </select>
-    <p class="hint">
-      Used for the popup task list. Manual sorting needs a default project (Vikunja
-      only orders by position inside a project view); otherwise the list falls back
-      to newest first. You can change the order and direction from the popup.
-    </p>
+    <p class="hint" data-i18n="hintSortBy">Used for the popup task list. Manual sorting needs a default project (Vikunja only orders by position inside a project view); otherwise the list falls back to newest first. You can change the order and direction from the popup.</p>
 
     <label class="checkbox">
       <input type="checkbox" id="remember-last-sort" name="rememberLastSort" />
-      <span>Remember last sort choice</span>
+      <span data-i18n="labelRememberLastSort">Remember last sort choice</span>
     </label>
-    <p class="hint">When enabled, the sort you pick in the popup is stored locally in the extension and overrides this default.</p>
+    <p class="hint" data-i18n="hintRememberLastSort">When enabled, the sort you pick in the popup is stored locally in the extension and overrides this default.</p>
 
-    <label for="custom-filter">Custom filter for the task list (optional)</label>
+    <label for="custom-filter" data-i18n="labelCustomFilter">Custom filter for the task list (optional)</label>
     <input
       type="text"
       id="custom-filter"
@@ -91,29 +80,22 @@
       autocomplete="off"
       spellcheck="false"
     />
-    <p class="hint">Applied to the popup task list. Setting a custom filter replaces the default <code>done = false</code> filter (which hides completed tasks). See <a href="https://vikunja.io/docs/filters" target="_blank" rel="noopener noreferrer">vikunja.io/docs/filters</a>.</p>
+    <p class="hint" data-i18n-html="hintCustomFilter">Applied to the popup task list. Setting a custom filter replaces the default <code>done = false</code> filter (which hides completed tasks). See <a href="https://vikunja.io/docs/filters" target="_blank" rel="noopener noreferrer">vikunja.io/docs/filters</a>.</p>
 
     <section id="integrations">
-      <h2>Matrix Element Integration</h2>
-      <p class="hint">
-        Add a Matrix Element web instance to get an &ldquo;Add to Vikunja&rdquo; button on every message.
-        The extension asks for permission to read the page, then adds the task through your Vikunja connection.
-      </p>
+      <h2 data-i18n="optionsElement">Matrix Element Integration</h2>
+      <p class="hint" data-i18n="hintElement">Add a Matrix Element web instance to get an “Add to Vikunja” button on every message. The extension asks for permission to read the page, then adds the task through your Vikunja connection.</p>
       <ul id="element-instances" class="instances"></ul>
       <div class="actions">
-        <button type="button" id="add-element" class="secondary">Add Element instance</button>
+        <button type="button" id="add-element" class="secondary" data-i18n="addElementInstance">Add Element instance</button>
       </div>
       <label class="checkbox">
         <input type="checkbox" id="element-react-after-add" name="elementReactAfterAdd" />
-        <span>React with 📝 to the message after adding it to Vikunja</span>
+        <span data-i18n="labelElementReactAfterAdd">React with 📝 to the message after adding it to Vikunja</span>
       </label>
-      <p class="hint">
-        After a message is added as a task, Element reacts to it with 📝 so everyone
-        in the room can see it was captured. The reaction is sent by Element itself
-        using your logged-in session.
-      </p>
+      <p class="hint" data-i18n="hintElementReactAfterAdd">After a message is added as a task, Element reacts to it with 📝 so everyone in the room can see it was captured. The reaction is sent by Element itself using your logged-in session.</p>
 
-      <label for="element-tag">Auto-assign tag</label>
+      <label for="element-tag" data-i18n="labelElementTag">Auto-assign tag</label>
       <input
         type="text"
         id="element-tag"
@@ -122,23 +104,20 @@
         autocomplete="off"
         spellcheck="false"
       />
-      <p class="hint">
-        Every task added from Element gets this tag. Leave empty to add tasks without
-        a tag. The tag is created in Vikunja automatically if it does not exist yet.
-      </p>
+      <p class="hint" data-i18n="hintElementTag">Every task added from Element gets this tag. Leave empty to add tasks without a tag. The tag is created in Vikunja automatically if it does not exist yet.</p>
     </section>
 
     <div class="actions">
-      <button type="submit" id="save">Save</button>
-      <button type="button" id="test" class="secondary">Test connection</button>
+      <button type="submit" id="save" data-i18n="saveButton">Save</button>
+      <button type="button" id="test" class="secondary" data-i18n="testConnectionButton">Test connection</button>
     </div>
 
   </form>
 
   <dialog id="element-dialog">
     <form id="element-form" novalidate>
-      <h3>Add Element instance</h3>
-      <label for="element-url">Element URL</label>
+      <h3 data-i18n="dialogAddElementTitle">Add Element instance</h3>
+      <label for="element-url" data-i18n="dialogElementUrlLabel">Element URL</label>
       <input
         type="url"
         id="element-url"
@@ -147,11 +126,11 @@
         spellcheck="false"
         required
       />
-      <p class="hint">The address of your Element web instance. You will be asked to grant the extension access to it.</p>
+      <p class="hint" data-i18n="hintElementUrl">The address of your Element web instance. You will be asked to grant the extension access to it.</p>
       <p id="element-status" class="status" hidden></p>
       <div class="actions">
-        <button type="submit" id="element-add">Add</button>
-        <button type="button" id="element-cancel" class="secondary">Cancel</button>
+        <button type="submit" id="element-add" data-i18n="dialogAddButton">Add</button>
+        <button type="button" id="element-cancel" class="secondary" data-i18n="dialogCancelButton">Cancel</button>
       </div>
     </form>
   </dialog>
@@ -159,6 +138,7 @@
   <p id="status" role="status" class="status" hidden></p>
   <br />
 
+  <script src="../lib/i18n.js"></script>
   <script src="../lib/vikunja.js"></script>
   <script src="../lib/ui.js"></script>
   <script src="options.js"></script>

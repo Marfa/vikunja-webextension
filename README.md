@@ -42,6 +42,16 @@ browser.
 - **Keyboard shortcuts** — `Alt+Shift+K` opens the popup, `Alt+Shift+V` adds
   the current website as a task.
 
+## Language
+
+The extension ships in **English** and **German**. The language is chosen from
+your browser's UI language (English is the fallback), so no in-extension setting
+is needed. The Quick Add Magic syntax stays English by design: its project,
+label, priority, date and repeat tokens (`+`, `*`, `!`, `@`, `tomorrow`,
+`every X`, …) are parsed identically to the Vikunja web app, which only
+understands English tokens. Add or edit a language by creating an entry in
+[`_locales/<locale>/messages.json`](_locales/).
+
 ## Inspirations
 
 The extension is inspired by the **Todoist extension for Chrome** (quick task
@@ -74,6 +84,8 @@ step). Run them from the repository root:
 node smoketests/vikunja_lib_test.js        # API client (pagination, tasks, labels, users)
 node smoketests/vikunja_popup_test.js      # popup UI + Quick Add Magic flow
 node smoketests/vikunja_extra_test.js      # options + capture windows
+node smoketests/vikunja_element_test.js    # background: Element instances, content-script hooks
+node smoketests/vikunja_content_test.js    # Element page: injected buttons + toasts
 node smoketests/quickadd_harness.js        # 879 Quick Add Magic parity assertions
 ```
 
@@ -101,5 +113,5 @@ permissions listed on the page, and you are ready to go.
 ## Packaging as an `.xpi`
 
 ```sh
-zip -r vikunja.xpi manifest.json background capture content icons lib options popup capture styles -x 'icons/icon.svg'
+zip -r vikunja.xpi manifest.json background capture content icons lib options popup capture styles _locales -x 'icons/icon.svg'
 ```

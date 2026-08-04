@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { installI18nMock } = require('./lib/i18n-mock');
 
 function fakeElement(id) {
   const el = {
@@ -84,11 +85,15 @@ const VikunjaLib = {
 };
 
 global.window = { open() {}, close() {}, VikunjaLib };
+installI18nMock();
+eval(fs.readFileSync(path.join(__dirname, '..', 'lib/i18n.js'), 'utf8'));
+global.window.I18n = globalThis.I18n;
 global.document = {
   getElementById: getById,
   createElement: (tag) => fakeElement(`<${tag}>`),
   createElementNS: (ns, tag) => fakeElement(`<svg:${tag}>`),
   createTextNode: (text) => ({ textContent: String(text) }),
+  querySelectorAll: () => [],
 };
 global.location = { search: '?title=Found%20bug&description=On%20page&url=https%3A%2F%2Fexample.com' };
 global.URLSearchParams = URLSearchParams;

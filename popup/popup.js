@@ -1,6 +1,8 @@
 (() => {
   'use strict';
 
+  window.I18n.applyPage();
+
   const {
     api,
     getConfig,
@@ -27,6 +29,7 @@
 
   const { parseTaskText, PrefixMode, PREFIXES, cleanupItemText, analyzeTaskText, removeSpan, repeatTaskFields } = window.QuickAdd;
   const { openOptions: uiOpenOptions, showToast: uiShowToast } = window.UiLib;
+  const { t } = window.I18n;
 
   const configPrompt = document.getElementById('config-prompt');
   const loading = document.getElementById('loading');
@@ -63,18 +66,18 @@
   let projectViews = null;
 
   const SORT_MODES = {
-    position: { label: 'Manually sorted', sortBy: 'position', orderBy: 'asc', needsView: true },
-    title: { label: 'Title', sortBy: 'title', orderBy: 'asc' },
-    created: { label: 'Created', sortBy: 'created', orderBy: 'desc' },
-    updated: { label: 'Updated', sortBy: 'updated', orderBy: 'desc' },
-    due_date: { label: 'Due date', sortBy: 'due_date', orderBy: 'asc' },
-    priority: { label: 'Priority', sortBy: 'priority', orderBy: 'desc' },
+    position: { label: t('sortManually', 'Manually sorted'), sortBy: 'position', orderBy: 'asc', needsView: true },
+    title: { label: t('sortByTitle', 'Title'), sortBy: 'title', orderBy: 'asc' },
+    created: { label: t('sortByCreated', 'Created'), sortBy: 'created', orderBy: 'desc' },
+    updated: { label: t('sortByUpdated', 'Updated'), sortBy: 'updated', orderBy: 'desc' },
+    due_date: { label: t('sortByDueDate', 'Due date'), sortBy: 'due_date', orderBy: 'asc' },
+    priority: { label: t('sortByPriority', 'Priority'), sortBy: 'priority', orderBy: 'desc' },
   };
 
   const PLACEHOLDERS = {
-    [PrefixMode.Default]: 'Add a task: +Project *label !1 @user tomorrow',
-    [PrefixMode.Todoist]: 'Add a task: #Project @label !1 +user tomorrow',
-    [PrefixMode.Disabled]: 'Add a task…',
+    [PrefixMode.Default]: t('quickAddPlaceholderVikunja', 'Add a task: +Project *label !1 @user tomorrow'),
+    [PrefixMode.Todoist]: t('quickAddPlaceholderTodoist', 'Add a task: #Project @label !1 +user tomorrow'),
+    [PrefixMode.Disabled]: t('quickAddPlaceholder', 'Add a task…'),
   };
 
   const DATE_PRESETS = ['today', 'tomorrow', 'in 2 days', 'in 3 days', 'in 1 week', 'next monday', 'next week'];
@@ -177,7 +180,7 @@
     const P = PREFIXES[quickAddMode];
     const projId = effectiveProjectId(tokens);
     const sel = makeChip('project');
-    sel.title = 'Project';
+    sel.title = t('chipProject', 'Project');
     for (const p of projectsById.values()) {
       sel.appendChild(chipOption(String(p.id), P && P.project ? `${P.project}${p.title}` : p.title));
     }
@@ -197,8 +200,8 @@
   function buildPriorityChip(tokens, P) {
     const has = tokens.priority !== null;
     const sel = makeChip(has ? 'priority' : '');
-    sel.title = 'Priority';
-    sel.appendChild(chipOption('', has ? tokens.priority.text : 'Priority'));
+    sel.title = t('chipPriority', 'Priority');
+    sel.appendChild(chipOption('', has ? tokens.priority.text : t('chipPriorityDefault', 'Priority')));
     for (let n = 1; n <= 5; n++) {
       sel.appendChild(chipOption(String(n), `${P.priority}${n}`));
     }
@@ -225,8 +228,8 @@
     }
     const names = tokens.labels.map((l) => l.text);
     const sel = makeChip(names.length > 0 ? 'label' : '');
-    sel.title = 'Label';
-    sel.appendChild(chipOption('', names.length > 0 ? `Labels · ${names.length}` : 'Label'));
+    sel.title = t('chipLabel', 'Label');
+    sel.appendChild(chipOption('', names.length > 0 ? t('chipLabelCount', 'Labels · $1', [names.length]) : t('chipLabel', 'Label')));
     for (const lb of labelOptions) {
       sel.appendChild(chipOption(String(lb.id), P.label + (lb.title || lb.name || lb.id)));
     }
@@ -261,11 +264,15 @@
     }
     const tokensUsed = tokens.assignees.map((a) => a.text);
     const sel = makeChip(tokensUsed.length > 0 ? 'assignee' : '');
-    sel.title = 'Assignee';
+    sel.title = t('chipAssignee', 'Assignee');
     sel.appendChild(
       chipOption(
         '',
-        tokensUsed.length > 0 ? `Assignees · ${tokensUsed.length}` : users === null ? 'Assignees…' : 'Assignee',
+        tokensUsed.length > 0
+          ? t('chipAssigneeCount', 'Assignees · $1', [tokensUsed.length])
+          : users === null
+            ? t('chipAssigneeLoading', 'Assignees…')
+            : t('chipAssignee', 'Assignee'),
       ),
     );
     if (users !== null) {
@@ -293,8 +300,8 @@
   function buildDateChip(tokens) {
     const has = tokens.date !== null;
     const sel = makeChip(has || prefs.dueToday ? 'date' : '');
-    sel.title = 'Due Date';
-    const placeholder = has ? tokens.date.text : prefs.dueToday ? 'today' : 'Due';
+    sel.title = t('chipDueDate', 'Due Date');
+    const placeholder = has ? tokens.date.text : prefs.dueToday ? 'today' : t('chipDueDefault', 'Due');
     sel.appendChild(chipOption('', placeholder));
     for (const preset of DATE_PRESETS) {
       // The placeholder already shows the current value (or the dueToday
@@ -314,8 +321,8 @@
   function buildRepeatChip(tokens) {
     const has = tokens.repeats !== null;
     const sel = makeChip(has ? 'repeat' : '');
-    sel.title = 'Repeat';
-    sel.appendChild(chipOption('', has ? tokens.repeats.text : 'Repeat'));
+    sel.title = t('chipRepeat', 'Repeat');
+    sel.appendChild(chipOption('', has ? tokens.repeats.text : t('chipRepeatDefault', 'Repeat')));
     for (const preset of REPEAT_PRESETS) {
       sel.appendChild(chipOption(preset, preset));
     }
@@ -381,7 +388,7 @@
     end.setDate(end.getDate() + 1);
     const dueDay = new Date(due.getTime());
     dueDay.setHours(0, 0, 0, 0);
-    if (dueDay >= today && dueDay < end) return 'Today';
+    if (dueDay >= today && dueDay < end) return t('todayLabel', 'Today');
     return due.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
@@ -390,7 +397,7 @@
   function makeCheckbox(task, onChange) {
     const label = document.createElement('label');
     label.className = 'task-check';
-    label.title = task.done ? 'Mark as not done' : 'Mark as done';
+    label.title = task.done ? t('markNotDone', 'Mark as not done') : t('markDone', 'Mark as done');
 
     const input = document.createElement('input');
     input.type = 'checkbox';
@@ -429,7 +436,7 @@
       })
       : tasks;
     taskEmpty.hidden = visible.length > 0;
-    taskEmpty.textContent = query ? 'No matching tasks.' : 'No tasks here yet.';
+    taskEmpty.textContent = query ? t('noMatchingTasks', 'No matching tasks.') : t('noTasks', 'No tasks here yet.');
 
     const now = Date.now();
     const showProject = !prefs.defaultProjectId;
@@ -451,8 +458,8 @@
 
       const title = document.createElement('span');
       title.className = 'task-title';
-      title.textContent = task.title || 'Untitled';
-      title.title = task.title || 'Untitled';
+      title.textContent = task.title || t('untitledLabel', 'Untitled');
+      title.title = task.title || t('untitledLabel', 'Untitled');
       title.addEventListener('click', () => {
         window.open(`${baseUrl}/tasks/${task.id}`, '_blank');
       });
@@ -476,10 +483,10 @@
         dueEl.className = 'task-due';
         if (!task.done && new Date(task.due_date).getTime() < now) {
           dueEl.classList.add('overdue');
-          dueEl.textContent = 'Overdue';
-        } else if (due === 'Today') {
+          dueEl.textContent = t('overdueLabel', 'Overdue');
+        } else if (due === t('todayLabel', 'Today')) {
           dueEl.classList.add('today');
-          dueEl.textContent = 'Today';
+          dueEl.textContent = t('todayLabel', 'Today');
         } else {
           dueEl.textContent = due;
         }
@@ -594,8 +601,8 @@
 
   function sortLabel() {
     const def = SORT_MODES[currentSort.mode];
-    const dir = currentSort.orderBy === 'asc' ? 'ascending' : 'descending';
-    return `Sort: ${def.label} (${dir})`;
+    const dir = currentSort.orderBy === 'asc' ? t('sortAscending', 'ascending') : t('sortDescending', 'descending');
+    return t('sortLabel', 'Sort: $1 ($2)', [def.label, dir]);
   }
 
   function renderSortMenu() {
@@ -615,7 +622,7 @@
     divider.className = 'menu-divider';
     sortMenu.appendChild(divider);
     const dir = document.createElement('li');
-    dir.textContent = currentSort.orderBy === 'asc' ? 'Ascending \u25B2' : 'Descending \u25BC';
+    dir.textContent = currentSort.orderBy === 'asc' ? t('sortAscendingItem', 'Ascending ▲') : t('sortDescendingItem', 'Descending ▼');
     dir.addEventListener('click', () => {
       return setSort(currentSort.mode, currentSort.orderBy === 'asc' ? 'desc' : 'asc');
     });
@@ -641,7 +648,7 @@
     try {
       await refreshTasks();
     } catch (e) {
-      uiShowToast(toastEl, `Could not reload tasks: ${e.message}`);
+      uiShowToast(toastEl, t('couldNotReloadTasks', 'Could not reload tasks: $1', [e.message]));
     }
   }
 
@@ -665,8 +672,7 @@
     }
     hostPatterns = hostPermissionPatterns(config);
     if (!await hasHostPermissions(hostPatterns)) {
-      configPrompt.querySelector('.empty').textContent =
-        'Vikunja is configured, but access to your Vikunja server is not granted yet.';
+      configPrompt.querySelector('.empty').textContent = t('configNoAccess', 'Vikunja is configured, but access to your Vikunja server is not granted yet.');
       grantAccessBtn.hidden = false;
       showView(configPrompt);
       return;
@@ -681,7 +687,7 @@
       prefs = p;
       quickAddMode = mode;
       projectsById = new Map(projects.map((pr) => [pr.id, pr]));
-      quickTitle.placeholder = PLACEHOLDERS[quickAddMode] || 'Add a task…';
+      quickTitle.placeholder = PLACEHOLDERS[quickAddMode] || t('quickAddPlaceholder', 'Add a task…');
       await resolveCurrentProject();
       await resolveSort();
       sortBtn.title = sortLabel();
@@ -694,12 +700,10 @@
       quickTitle.focus();
     } catch (e) {
       if (!await hasHostPermissions(hostPatterns)) {
-        configPrompt.querySelector('.empty').textContent =
-          'Vikunja is configured, but access to your Vikunja server is not granted yet.';
+        configPrompt.querySelector('.empty').textContent = t('configNoAccess', 'Vikunja is configured, but access to your Vikunja server is not granted yet.');
         grantAccessBtn.hidden = false;
       } else {
-        configPrompt.querySelector('.empty').textContent =
-          `Could not load tasks: ${e.message}`;
+        configPrompt.querySelector('.empty').textContent = t('couldNotLoadTasks', 'Could not load tasks: $1', [e.message]);
       }
       showView(configPrompt);
     }
@@ -711,11 +715,11 @@
     try {
       await completeTask(task.id, next);
       task.done = next;
-      uiShowToast(toastEl, next ? 'Task completed.' : 'Task reopened.');
+      uiShowToast(toastEl, next ? t('taskCompleted', 'Task completed.') : t('taskReopened', 'Task reopened.'));
       renderTasks();
     } catch (e) {
       input.checked = !next;
-      uiShowToast(toastEl, `Could not update task: ${e.message}`);
+      uiShowToast(toastEl, t('couldNotUpdateTask', 'Could not update task: $1', [e.message]));
     } finally {
       input.disabled = false;
     }
@@ -824,7 +828,7 @@
     e.preventDefault();
     const rawTitle = quickTitle.value.trim();
     if (!rawTitle) {
-      setQuickError('Please enter a task title.');
+      setQuickError(t('pleaseEnterTitle', 'Please enter a task title.'));
       quickTitle.focus();
       return;
     }
@@ -837,7 +841,7 @@
       // raw title instead (no intents to act on).
       if (parsed.text === '') {
         if (!currentProjectId) {
-          setQuickError('Please select a project.');
+          setQuickError(t('pleaseSelectProject', 'Please select a project.'));
           quickTitle.focus();
           return;
         }
@@ -846,7 +850,7 @@
           body.due_date = dueTodayISO();
         }
         const created = await createTask(currentProjectId, body);
-        uiShowToast(toastEl, 'Task added.', { link: { id: created.id, href: `${baseUrl}/tasks/${created.id}` } });
+        uiShowToast(toastEl, t('taskAdded', 'Task added.'), { link: { id: created.id, href: `${baseUrl}/tasks/${created.id}` } });
         quickTitle.value = '';
         renderChips();
         await refreshTasks();
@@ -857,7 +861,7 @@
 
       const projectId = resolveProject(parsed.project);
       if (!projectId) {
-        setQuickError('Please select a project.');
+        setQuickError(t('pleaseSelectProject', 'Please select a project.'));
         quickTitle.focus();
         return;
       }
@@ -899,7 +903,7 @@
         await addAssigneeToTask(created.id, user.id);
       }
       await addLabelsToTask(created.id, parsed.labels);
-      uiShowToast(toastEl, 'Task added.', { link: { id: created.id, href: `${baseUrl}/tasks/${created.id}` } });
+      uiShowToast(toastEl, t('taskAdded', 'Task added.'), { link: { id: created.id, href: `${baseUrl}/tasks/${created.id}` } });
       quickTitle.value = '';
       await api.storage.local.set({ lastProjectId: projectId });
       currentProjectId = projectId;
@@ -921,7 +925,7 @@
       const content = buildTaskContent({}, tab || {});
       await openCapture(content);
     } catch (err) {
-      uiShowToast(toastEl, `Could not open capture: ${err.message}`);
+      uiShowToast(toastEl, t('couldNotOpenCapture', 'Could not open capture: $1', [err.message]));
     } finally {
       addSiteBtn.disabled = false;
     }
@@ -934,11 +938,10 @@
     try {
       if (await requestHostPermissions(hostPatterns)) {
         grantAccessBtn.hidden = true;
-        configPrompt.querySelector('.empty').textContent = 'Vikunja is not configured yet.';
+        configPrompt.querySelector('.empty').textContent = t('notConfigured', 'Vikunja is not configured yet.');
         load();
       } else {
-        configPrompt.querySelector('.empty').textContent =
-          'Access to your Vikunja server was not granted. You can try again or open the settings.';
+        configPrompt.querySelector('.empty').textContent = t('accessNotGranted', 'Access to your Vikunja server was not granted. You can try again or open the settings.');
       }
     } finally {
       grantAccessBtn.disabled = false;

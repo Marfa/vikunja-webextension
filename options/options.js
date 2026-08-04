@@ -1,8 +1,11 @@
 (() => {
   'use strict';
 
+  window.I18n.applyPage();
+
   const { api, normalizeBaseUrl, getConfig, getPrefs, request, listProjects, hostPermissionPatterns, requestHostPermissions, getElementInstances, elementInstancePatterns, hasHostPermissions } = window.VikunjaLib;
   const { fillProjectSelect: uiFillProjectSelect } = window.UiLib;
+  const { t } = window.I18n;
 
   const form = document.getElementById('settings-form');
   const urlInput = document.getElementById('base-url');
@@ -62,11 +65,11 @@
   function validate() {
     const config = formConfig();
     if (!config.baseUrl || !/^https?:\/\/[^/]+/.test(config.baseUrl)) {
-      showStatus('Please enter a valid Vikunja URL (e.g. https://try.vikunja.io).', 'error');
+      showStatus(t('errValidUrl', 'Please enter a valid Vikunja URL (e.g. https://try.vikunja.io).'), 'error');
       return null;
     }
     if (!config.token) {
-      showStatus('Please enter your Vikunja API token.', 'error');
+      showStatus(t('errValidToken', 'Please enter your Vikunja API token.'), 'error');
       return null;
     }
     return config;
@@ -75,7 +78,7 @@
   function fillProjectSelect(selected) {
     uiFillProjectSelect(defaultProjectSelect, projects, {
       selectedId: selected,
-      placeholder: 'No default project',
+      placeholder: t('noDefaultProject', 'No default project'),
       placeholderDisabled: false,
       fallbackToFirst: false,
     });
@@ -110,13 +113,13 @@
     try {
       // Ensure we have the permissions
       if (!await requestHostPermissions(hostPermissionPatterns(config))) {
-        throw new Error(`Permission denied for ${config.baseUrl}`);
+        throw new Error(t('permissionDeniedFor', 'Permission denied for $1', [config.baseUrl]));
       }
 
       await api.storage.sync.set(config);
-      showStatus('Settings saved.', 'ok');
+      showStatus(t('settingsSaved', 'Settings saved.'), 'ok');
     } catch (e) {
-      showStatus(`Could not save settings: ${e.message}`, 'error');
+      showStatus(t('couldNotSaveSettings', 'Could not save settings: $1', [e.message]), 'error');
     } finally {
       saveBtn.disabled = false;
     }
@@ -135,17 +138,19 @@
         baseUrl: config.baseUrl,
       });
       showStatus(
-        `Connected successfully${user && user.name ? ` as ${user.name}` : ''}.`,
+        user && user.name
+          ? t('connectedAs', 'Connected successfully as $1.', [user.name])
+          : t('connectedSuccess', 'Connected successfully.'),
         'ok',
       );
       try {
         projects = await listProjects();
         fillProjectSelect(config.defaultProjectId);
       } catch (e) {
-        showStatus(`Connected, but could not load projects: ${e.message}`, 'error');
+        showStatus(t('connectedNoProjects', 'Connected, but could not load projects: $1', [e.message]), 'error');
       }
     } catch (e) {
-      showStatus(`Connection failed: ${e.message}`, 'error');
+      showStatus(t('connectionFailed', 'Connection failed: $1', [e.message]), 'error');
     } finally {
       testBtn.disabled = false;
       saveBtn.disabled = false;
@@ -155,7 +160,7 @@
   function elementBadge(granted) {
     const span = document.createElement('span');
     span.className = `badge ${granted ? 'granted' : 'missing'}`;
-    span.textContent = granted ? 'Granted' : 'Not granted';
+    span.textContent = granted ? t('badgeGranted', 'Granted') : t('badgeNotGranted', 'Not granted');
     return span;
   }
 
@@ -171,7 +176,7 @@
       const removeBtn = document.createElement('button');
       removeBtn.type = 'button';
       removeBtn.className = 'secondary';
-      removeBtn.textContent = 'Remove';
+      removeBtn.textContent = t('removeButton', 'Remove');
       removeBtn.addEventListener('click', () => removeElementInstance(inst.url));
       li.appendChild(url);
       li.appendChild(badge);
@@ -188,7 +193,7 @@
     if (pattern && api.permissions && typeof api.permissions.remove === 'function') {
       api.permissions.remove({ origins: [pattern] }).catch(() => {});
     }
-    showStatus(`Removed ${url}.`, 'ok');
+    showStatus(t('removedInstance', 'Removed $1.', [url]), 'ok');
   }
 
   function openElementDialog() {
@@ -205,13 +210,13 @@
     const url = normalizeBaseUrl(elementUrlInput.value);
     const pattern = elementInstancePatterns([{ url }])[0];
     if (!pattern) {
-      showElementStatus('Please enter a valid Element URL (e.g. https://app.element.io).', 'error');
+      showElementStatus(t('errValidElementUrl', 'Please enter a valid Element URL (e.g. https://app.element.io).'), 'error');
       return;
     }
     elementAddBtn.disabled = true;
     try {
       if (!await requestHostPermissions([pattern])) {
-        showElementStatus('Access to that Element instance was not granted.', 'error');
+        showElementStatus(t('elementAccessNotGranted', 'Access to that Element instance was not granted.'), 'error');
         return;
       }
       if (!elementInstances.some((inst) => inst.url === url)) {
@@ -222,9 +227,9 @@
         elementDialog.close();
       }
       renderElementInstances();
-      showStatus(`Added ${url}. You can now add tasks from Element.`, 'ok');
+      showStatus(t('addedElement', 'Added $1. You can now add tasks from Element.', [url]), 'ok');
     } catch (err) {
-      showElementStatus(`Could not add instance: ${err.message}`, 'error');
+      showElementStatus(t('couldNotAddElement', 'Could not add instance: $1', [err.message]), 'error');
     } finally {
       elementAddBtn.disabled = false;
     }

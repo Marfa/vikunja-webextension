@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
+const { installI18nMock } = require('./lib/i18n-mock');
 const src = fs.readFileSync(path.join(__dirname, '..', 'lib/vikunja.js'), 'utf8');
 
 const store = { baseUrl: 'https://vikunja.example', token: 'tk_test', defaultProjectId: '7', dueToday: true, customFilter: 'done = false' };
@@ -17,6 +18,8 @@ global.chrome = {
   runtime: { getURL: (p) => `moz-extension://abc/${p}` },
   windows: { create: (d) => d },
 };
+installI18nMock();
+eval(fs.readFileSync(path.join(__dirname, '..', 'lib/i18n.js'), 'utf8'));
 
 let quickAddModeStored = 'todoist';
 let failUserDetail = false;

@@ -1,0 +1,446 @@
+{
+  "htmlLang": {
+    "message": "de"
+  },
+  "extDescription": {
+    "message": "Verwalte Vikunja-Aufgaben über deine Browser-Symbolleiste — mit Aufgabenliste, Schnellhinzufügen und Erfassen der aktuellen Seite."
+  },
+  "cmdOpenPopup": {
+    "message": "Vikunja-Popup öffnen"
+  },
+  "cmdAddSite": {
+    "message": "Aktuelle Website als Aufgabe hinzufügen"
+  },
+  "notConfigured": {
+    "message": "Vikunja ist noch nicht konfiguriert."
+  },
+  "grantAccess": {
+    "message": "Zugriff erlauben"
+  },
+  "openSettings": {
+    "message": "Einstellungen öffnen"
+  },
+  "configNoAccess": {
+    "message": "Vikunja ist konfiguriert, aber der Zugriff auf deinen Vikunja-Server wurde noch nicht erlaubt."
+  },
+  "accessNotGranted": {
+    "message": "Der Zugriff auf deinen Vikunja-Server wurde nicht erlaubt. Du kannst es erneut versuchen oder die Einstellungen öffnen."
+  },
+  "searchPlaceholder": {
+    "message": "Aufgaben suchen…"
+  },
+  "searchAriaLabel": {
+    "message": "Aufgaben suchen"
+  },
+  "sortTasksTitle": {
+    "message": "Aufgaben sortieren"
+  },
+  "sortTasksAriaLabel": {
+    "message": "Aufgaben sortieren"
+  },
+  "addSiteTitle": {
+    "message": "Aktuelle Seite als Aufgabe hinzufügen"
+  },
+  "addSiteAriaLabel": {
+    "message": "Aktuelle Seite als Aufgabe hinzufügen"
+  },
+  "settingsTitle": {
+    "message": "Einstellungen"
+  },
+  "settingsAriaLabel": {
+    "message": "Einstellungen öffnen"
+  },
+  "logoTitle": {
+    "message": "Vikunja öffnen"
+  },
+  "logoAriaLabel": {
+    "message": "Vikunja öffnen"
+  },
+  "loadingTasks": {
+    "message": "Aufgaben werden geladen…"
+  },
+  "noTasks": {
+    "message": "Hier sind noch keine Aufgaben."
+  },
+  "noMatchingTasks": {
+    "message": "Keine passenden Aufgaben."
+  },
+  "quickAddPlaceholder": {
+    "message": "Aufgabe hinzufügen…"
+  },
+  "quickAddPlaceholderVikunja": {
+    "message": "Aufgabe hinzufügen: +Project *label !1 @user tomorrow"
+  },
+  "quickAddPlaceholderTodoist": {
+    "message": "Aufgabe hinzufügen: #Project @label !1 +user tomorrow"
+  },
+  "quickAddAriaLabel": {
+    "message": "Aufgabe hinzufügen"
+  },
+  "addButton": {
+    "message": "Hinzufügen"
+  },
+  "sortManually": {
+    "message": "Manuell sortiert"
+  },
+  "sortByTitle": {
+    "message": "Titel"
+  },
+  "sortByCreated": {
+    "message": "Erstellt"
+  },
+  "sortByUpdated": {
+    "message": "Aktualisiert"
+  },
+  "sortByDueDate": {
+    "message": "Fälligkeitsdatum"
+  },
+  "sortByPriority": {
+    "message": "Priorität"
+  },
+  "sortLabel": {
+    "message": "Sortieren: $1 ($2)"
+  },
+  "sortAscending": {
+    "message": "aufsteigend"
+  },
+  "sortDescending": {
+    "message": "absteigend"
+  },
+  "sortAscendingItem": {
+    "message": "Aufsteigend ▲"
+  },
+  "sortDescendingItem": {
+    "message": "Absteigend ▼"
+  },
+  "chipProject": {
+    "message": "Projekt"
+  },
+  "chipPriority": {
+    "message": "Priorität"
+  },
+  "chipPriorityDefault": {
+    "message": "Priorität"
+  },
+  "chipLabel": {
+    "message": "Label"
+  },
+  "chipLabelCount": {
+    "message": "Labels · $1"
+  },
+  "chipAssignee": {
+    "message": "Zugewiesener"
+  },
+  "chipAssigneeCount": {
+    "message": "Zugewiesene · $1"
+  },
+  "chipAssigneeLoading": {
+    "message": "Zugewiesene…"
+  },
+  "chipDueDate": {
+    "message": "Fälligkeitsdatum"
+  },
+  "chipDueDefault": {
+    "message": "Fällig"
+  },
+  "chipRepeat": {
+    "message": "Wiederholung"
+  },
+  "chipRepeatDefault": {
+    "message": "Wiederholung"
+  },
+  "todayLabel": {
+    "message": "Heute"
+  },
+  "overdueLabel": {
+    "message": "Überfällig"
+  },
+  "untitledLabel": {
+    "message": "Ohne Titel"
+  },
+  "markNotDone": {
+    "message": "Als nicht erledigt markieren"
+  },
+  "markDone": {
+    "message": "Als erledigt markieren"
+  },
+  "taskAdded": {
+    "message": "Aufgabe hinzugefügt."
+  },
+  "taskCompleted": {
+    "message": "Aufgabe erledigt."
+  },
+  "taskReopened": {
+    "message": "Aufgabe wieder geöffnet."
+  },
+  "toastTaskAdded": {
+    "message": "Aufgabe $1 hinzugefügt"
+  },
+  "couldNotUpdateTask": {
+    "message": "Aufgabe konnte nicht aktualisiert werden: $1"
+  },
+  "couldNotReloadTasks": {
+    "message": "Aufgaben konnten nicht neu geladen werden: $1"
+  },
+  "couldNotLoadTasks": {
+    "message": "Aufgaben konnten nicht geladen werden: $1"
+  },
+  "couldNotOpenCapture": {
+    "message": "Erfassungsfenster konnte nicht geöffnet werden: $1"
+  },
+  "pleaseEnterTitle": {
+    "message": "Bitte gib einen Aufgabentitel ein."
+  },
+  "pleaseSelectProject": {
+    "message": "Bitte wähle ein Projekt."
+  },
+  "optionsTitle": {
+    "message": "Vikunja-Einstellungen"
+  },
+  "optionsConnection": {
+    "message": "Verbindung"
+  },
+  "labelBaseUrl": {
+    "message": "Vikunja-URL"
+  },
+  "hintBaseUrl": {
+    "message": "Die Adresse deiner Vikunja-Instanz ohne abschließenden Schrägstrich."
+  },
+  "labelToken": {
+    "message": "API-Token"
+  },
+  "hintToken": {
+    "message": "Erstelle einen API-Token in Vikunja unter Einstellungen → API-Tokens. Gib dem Token mindestens folgende Berechtigungen:"
+  },
+  "hintOptionalScopes": {
+    "message": "Die optionalen Funktionen unten benötigen ein paar weitere Berechtigungen:"
+  },
+  "scopeQuickAddMagic": {
+    "message": "<strong>Quick Add Magic</strong> im Popup (<code>*label</code>, <code>+project</code>, <code>!priority</code>, <code>@assignee</code>): <code>labels</code> read_all &amp; create, <code>tasks_labels</code> create, <code>projects_users</code> read_all"
+  },
+  "scopeElementTag": {
+    "message": "<strong>Tag für Element-Autozuweisung</strong> (unten): <code>labels</code> read_all &amp; create, <code>tasks_labels</code> create"
+  },
+  "optionsDefaults": {
+    "message": "Standardwerte"
+  },
+  "labelDefaultProject": {
+    "message": "Standardprojekt"
+  },
+  "noDefaultProject": {
+    "message": "Kein Standardprojekt"
+  },
+  "hintDefaultProject": {
+    "message": "Aufgaben aus dem Popup und dem Erfassungsfenster werden standardmäßig diesem Projekt hinzugefügt."
+  },
+  "labelDueTodayDefault": {
+    "message": "Fälligkeitsdatum standardmäßig auf heute setzen"
+  },
+  "hintDueTodayDefault": {
+    "message": "Neue Aufgaben erhalten ein Fälligkeitsdatum von heute (zur nächstgelegenen Stunde in Vikunja)."
+  },
+  "labelSortBy": {
+    "message": "Standard-Sortierung"
+  },
+  "hintSortBy": {
+    "message": "Wird für die Popup-Aufgabenliste verwendet. Für die manuelle Sortierung wird ein Standardprojekt benötigt (Vikunja sortiert nur innerhalb einer Projektansicht nach Position); ansonsten fällt die Liste auf „neueste zuerst“ zurück. Reihenfolge und Richtung kannst du im Popup ändern."
+  },
+  "labelRememberLastSort": {
+    "message": "Letzte Sortierwahl merken"
+  },
+  "hintRememberLastSort": {
+    "message": "Wenn aktiviert, wird die im Popup gewählte Sortierung lokal in der Erweiterung gespeichert und überschreibt diese Standardeinstellung."
+  },
+  "labelCustomFilter": {
+    "message": "Eigener Filter für die Aufgabenliste (optional)"
+  },
+  "hintCustomFilter": {
+    "message": "Wird auf die Popup-Aufgabenliste angewendet. Ein eigener Filter ersetzt den Standardfilter <code>done = false</code> (der erledigte Aufgaben ausblendet). Siehe <a href=\"https://vikunja.io/docs/filters\" target=\"_blank\" rel=\"noopener noreferrer\">vikunja.io/docs/filters</a>."
+  },
+  "optionsElement": {
+    "message": "Matrix-Element-Integration"
+  },
+  "hintElement": {
+    "message": "Füge eine Matrix-Element-Webinstanz hinzu, um auf jeder Nachricht einen „Zu Vikunja hinzufügen“-Button zu erhalten. Die Erweiterung fragt um Erlaubnis, die Seite zu lesen, und fügt die Aufgabe dann über deine Vikunja-Verbindung hinzu."
+  },
+  "addElementInstance": {
+    "message": "Element-Instanz hinzufügen"
+  },
+  "labelElementReactAfterAdd": {
+    "message": "Nach dem Hinzufügen zu Vikunja mit 📝 auf die Nachricht reagieren"
+  },
+  "hintElementReactAfterAdd": {
+    "message": "Nachdem eine Nachricht als Aufgabe hinzugefügt wurde, reagiert Element mit 📝, damit alle im Raum sehen können, dass sie erfasst wurde. Die Reaktion wird von Element selbst über deine angemeldete Sitzung gesendet."
+  },
+  "labelElementTag": {
+    "message": "Automatisch zugewiesenes Tag"
+  },
+  "hintElementTag": {
+    "message": "Jede aus Element hinzugefügte Aufgabe erhält dieses Tag. Leer lassen, um Aufgaben ohne Tag hinzuzufügen. Das Tag wird in Vikunja automatisch erstellt, falls es noch nicht existiert."
+  },
+  "saveButton": {
+    "message": "Speichern"
+  },
+  "testConnectionButton": {
+    "message": "Verbindung testen"
+  },
+  "dialogAddElementTitle": {
+    "message": "Element-Instanz hinzufügen"
+  },
+  "dialogElementUrlLabel": {
+    "message": "Element-URL"
+  },
+  "hintElementUrl": {
+    "message": "Die Adresse deiner Element-Webinstanz. Du wirst gebeten, der Erweiterung Zugriff darauf zu gewähren."
+  },
+  "dialogAddButton": {
+    "message": "Hinzufügen"
+  },
+  "dialogCancelButton": {
+    "message": "Abbrechen"
+  },
+  "errValidUrl": {
+    "message": "Bitte gib eine gültige Vikunja-URL ein (z. B. https://try.vikunja.io)."
+  },
+  "errValidToken": {
+    "message": "Bitte gib deinen Vikunja-API-Token ein."
+  },
+  "settingsSaved": {
+    "message": "Einstellungen gespeichert."
+  },
+  "couldNotSaveSettings": {
+    "message": "Einstellungen konnten nicht gespeichert werden: $1"
+  },
+  "permissionDeniedFor": {
+    "message": "Zugriff für $1 verweigert"
+  },
+  "connectedSuccess": {
+    "message": "Erfolgreich verbunden."
+  },
+  "connectedAs": {
+    "message": "Erfolgreich verbunden als $1."
+  },
+  "connectedNoProjects": {
+    "message": "Verbunden, aber Projekte konnten nicht geladen werden: $1"
+  },
+  "connectionFailed": {
+    "message": "Verbindung fehlgeschlagen: $1"
+  },
+  "badgeGranted": {
+    "message": "Gewährt"
+  },
+  "badgeNotGranted": {
+    "message": "Nicht gewährt"
+  },
+  "removeButton": {
+    "message": "Entfernen"
+  },
+  "removedInstance": {
+    "message": "$1 entfernt."
+  },
+  "errValidElementUrl": {
+    "message": "Bitte gib eine gültige Element-URL ein (z. B. https://app.element.io)."
+  },
+  "elementAccessNotGranted": {
+    "message": "Der Zugriff auf diese Element-Instanz wurde nicht gewährt."
+  },
+  "addedElement": {
+    "message": "$1 hinzugefügt. Du kannst jetzt Aufgaben aus Element hinzufügen."
+  },
+  "couldNotAddElement": {
+    "message": "Instanz konnte nicht hinzugefügt werden: $1"
+  },
+  "captureTitle": {
+    "message": "Aufgabe zu Vikunja hinzufügen"
+  },
+  "fieldTitle": {
+    "message": "Titel"
+  },
+  "fieldProject": {
+    "message": "Projekt"
+  },
+  "fieldDueToday": {
+    "message": "Heute fällig"
+  },
+  "hintDueTodayCapture": {
+    "message": "Fälligkeitsdatum der Aufgabe auf heute setzen"
+  },
+  "fieldDescription": {
+    "message": "Beschreibung (optional)"
+  },
+  "cancelButton": {
+    "message": "Abbrechen"
+  },
+  "addTaskButton": {
+    "message": "Aufgabe hinzufügen"
+  },
+  "selectProject": {
+    "message": "Ein Projekt auswählen"
+  },
+  "noProjectsFound": {
+    "message": "Keine Projekte gefunden — erstelle zuerst eines in Vikunja."
+  },
+  "lostPermissions": {
+    "message": "Es sieht so aus, als hätten wir den Zugriff auf dein Vikunja verloren. Du kannst unten den Zugriff erteilen."
+  },
+  "couldNotLoadProjects": {
+    "message": "Projekte konnten nicht geladen werden: $1"
+  },
+  "addToVikunja": {
+    "message": "Zu Vikunja hinzufügen"
+  },
+  "contextMenuAddToVikunja": {
+    "message": "Zu Vikunja hinzufügen…"
+  },
+  "couldNotAddTask": {
+    "message": "Aufgabe konnte nicht zu Vikunja hinzugefügt werden."
+  },
+  "addTaskFallback": {
+    "message": "Aufgabe hinzufügen"
+  },
+  "messageFrom": {
+    "message": "Nachricht von $1"
+  },
+  "viewMessageLabel": {
+    "message": "Nachricht ansehen"
+  },
+  "errRequestOrigin": {
+    "message": "Die Anfrage stammt nicht von einer registrierten Element-Instanz."
+  },
+  "errNoMessageText": {
+    "message": "Kein Nachrichtentext zum Hinzufügen."
+  },
+  "errElementNotLoggedIn": {
+    "message": "Element ist nicht angemeldet."
+  },
+  "errNoRoomForEvent": {
+    "message": "Kein Raum für das Ereignis gefunden."
+  },
+  "errScriptingUnavailable": {
+    "message": "Scripting-API nicht verfügbar."
+  },
+  "errNoTabToReact": {
+    "message": "Kein Tab zum Reagieren."
+  },
+  "errMissingEventId": {
+    "message": "Ereignis-ID fehlt."
+  },
+  "errNoTabToRead": {
+    "message": "Kein Tab zum Lesen."
+  },
+  "errMissingRoomId": {
+    "message": "Raum-ID fehlt."
+  },
+  "errNotConfigured": {
+    "message": "Vikunja ist noch nicht konfiguriert."
+  },
+  "errNoLabelTitle": {
+    "message": "Kein Label-Titel angegeben."
+  },
+  "errUnreachable": {
+    "message": "Vikunja unter $1 konnte nicht erreicht werden: $2"
+  },
+  "errRequestFailed": {
+    "message": "Anfrage fehlgeschlagen mit Status $1"
+  }
+}

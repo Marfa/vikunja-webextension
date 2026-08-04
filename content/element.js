@@ -2,6 +2,7 @@
   'use strict';
 
   const api = typeof browser !== 'undefined' ? browser : chrome;
+  const { t } = globalThis.I18n || { t: (key, englishDefault) => englishDefault };
 
   const BAR_SELECTOR = '.mx_MessageActionBar';
   const MENU_SELECTOR = '.mx_MessageContextMenu';
@@ -24,14 +25,22 @@
     }
     toastEl.textContent = '';
     if (link && link.href) {
-      toastEl.appendChild(document.createTextNode('Task '));
+      const idStr = String(link.id);
+      const text = t('toastTaskAdded', 'Task $1 added', [idStr]);
       const anchor = document.createElement('a');
       anchor.href = link.href;
       anchor.target = '_blank';
       anchor.rel = 'noopener';
-      anchor.textContent = String(link.id);
-      toastEl.appendChild(anchor);
-      toastEl.appendChild(document.createTextNode(' added'));
+      anchor.textContent = idStr;
+      const at = text.indexOf(idStr);
+      if (at !== -1) {
+        toastEl.appendChild(document.createTextNode(text.slice(0, at)));
+        toastEl.appendChild(anchor);
+        toastEl.appendChild(document.createTextNode(text.slice(at + idStr.length)));
+      } else {
+        toastEl.appendChild(anchor);
+        toastEl.appendChild(document.createTextNode(text));
+      }
     } else {
       toastEl.textContent = message;
     }
@@ -94,8 +103,8 @@
     button.className = inMenu ? 'mx_IconizedContextMenu_item vikunja-element-add' : 'vikunja-element-add';
     button.setAttribute('role', inMenu ? 'menuitem' : 'button');
     button.setAttribute('tabindex', '0');
-    button.setAttribute('aria-label', 'Add to Vikunja');
-    button.title = 'Add to Vikunja';
+    button.setAttribute('aria-label', t('addToVikunja', 'Add to Vikunja'));
+    button.title = t('addToVikunja', 'Add to Vikunja');
     const svg = document.createElementNS(SVG_NS, 'svg');
     svg.setAttribute('viewBox', '0 0 256 256');
     svg.setAttribute('width', '16');
@@ -116,7 +125,7 @@
     if (inMenu) {
       const label = document.createElement('span');
       label.className = 'mx_IconizedContextMenu_label';
-      label.textContent = 'Add to Vikunja';
+      label.textContent = t('addToVikunja', 'Add to Vikunja');
       button.appendChild(label);
     }
     button.addEventListener('click', () => {
@@ -382,7 +391,7 @@
     if (start) {
       return room ? `${room}: ${start}` : start;
     }
-    return room || (sender ? `Message from ${sender}` : 'Add task');
+    return room || (sender ? t('messageFrom', 'Message from $1', [sender]) : t('addTaskFallback', 'Add task'));
   }
 
   function buildDescription(body, url) {
@@ -391,7 +400,7 @@
       parts.push(body);
     }
     if (url) {
-      parts.push(`[View message](${url})`);
+      parts.push(`[${t('viewMessageLabel', 'View message')}](${url})`);
     }
     return parts.join('\n\n');
   }
@@ -439,12 +448,12 @@
         description,
       });
       if (!response || response.ok !== true) {
-        toast((response && response.error) || 'Could not add task to Vikunja.', true);
+        toast((response && response.error) || t('couldNotAddTask', 'Could not add task to Vikunja.'), true);
       } else {
         const link = response.task && response.task.id && response.url
           ? { id: response.task.id, href: response.url }
           : null;
-        toast('Task added.', false, link);
+        toast(t('taskAdded', 'Task added.'), false, link);
         api.storage.sync
           .get({ elementReactAfterAdd: false })
           .then((stored) => {
@@ -455,7 +464,7 @@
           .catch(() => {});
       }
     } catch (e) {
-      toast(e.message || 'Could not add task to Vikunja.', true);
+      toast(e.message || t('couldNotAddTask', 'Could not add task to Vikunja.'), true);
     }
   }
 

@@ -1,0 +1,446 @@
+{
+  "htmlLang": {
+    "message": "en"
+  },
+  "extDescription": {
+    "message": "Manage Vikunja tasks from your browser toolbar, with a task list, quick add and capture of the current page."
+  },
+  "cmdOpenPopup": {
+    "message": "Open the Vikunja popup"
+  },
+  "cmdAddSite": {
+    "message": "Add the current website as a task"
+  },
+  "notConfigured": {
+    "message": "Vikunja is not configured yet."
+  },
+  "grantAccess": {
+    "message": "Grant access"
+  },
+  "openSettings": {
+    "message": "Open settings"
+  },
+  "configNoAccess": {
+    "message": "Vikunja is configured, but access to your Vikunja server is not granted yet."
+  },
+  "accessNotGranted": {
+    "message": "Access to your Vikunja server was not granted. You can try again or open the settings."
+  },
+  "searchPlaceholder": {
+    "message": "Search tasks…"
+  },
+  "searchAriaLabel": {
+    "message": "Search tasks"
+  },
+  "sortTasksTitle": {
+    "message": "Sort tasks"
+  },
+  "sortTasksAriaLabel": {
+    "message": "Sort tasks"
+  },
+  "addSiteTitle": {
+    "message": "Add current page as task"
+  },
+  "addSiteAriaLabel": {
+    "message": "Add current page as task"
+  },
+  "settingsTitle": {
+    "message": "Settings"
+  },
+  "settingsAriaLabel": {
+    "message": "Open settings"
+  },
+  "logoTitle": {
+    "message": "Open Vikunja"
+  },
+  "logoAriaLabel": {
+    "message": "Open Vikunja"
+  },
+  "loadingTasks": {
+    "message": "Loading tasks…"
+  },
+  "noTasks": {
+    "message": "No tasks here yet."
+  },
+  "noMatchingTasks": {
+    "message": "No matching tasks."
+  },
+  "quickAddPlaceholder": {
+    "message": "Add a task…"
+  },
+  "quickAddPlaceholderVikunja": {
+    "message": "Add a task: +Project *label !1 @user tomorrow"
+  },
+  "quickAddPlaceholderTodoist": {
+    "message": "Add a task: #Project @label !1 +user tomorrow"
+  },
+  "quickAddAriaLabel": {
+    "message": "Add a task"
+  },
+  "addButton": {
+    "message": "Add"
+  },
+  "sortManually": {
+    "message": "Manually sorted"
+  },
+  "sortByTitle": {
+    "message": "Title"
+  },
+  "sortByCreated": {
+    "message": "Created"
+  },
+  "sortByUpdated": {
+    "message": "Updated"
+  },
+  "sortByDueDate": {
+    "message": "Due date"
+  },
+  "sortByPriority": {
+    "message": "Priority"
+  },
+  "sortLabel": {
+    "message": "Sort: $1 ($2)"
+  },
+  "sortAscending": {
+    "message": "ascending"
+  },
+  "sortDescending": {
+    "message": "descending"
+  },
+  "sortAscendingItem": {
+    "message": "Ascending ▲"
+  },
+  "sortDescendingItem": {
+    "message": "Descending ▼"
+  },
+  "chipProject": {
+    "message": "Project"
+  },
+  "chipPriority": {
+    "message": "Priority"
+  },
+  "chipPriorityDefault": {
+    "message": "Priority"
+  },
+  "chipLabel": {
+    "message": "Label"
+  },
+  "chipLabelCount": {
+    "message": "Labels · $1"
+  },
+  "chipAssignee": {
+    "message": "Assignee"
+  },
+  "chipAssigneeCount": {
+    "message": "Assignees · $1"
+  },
+  "chipAssigneeLoading": {
+    "message": "Assignees…"
+  },
+  "chipDueDate": {
+    "message": "Due Date"
+  },
+  "chipDueDefault": {
+    "message": "Due"
+  },
+  "chipRepeat": {
+    "message": "Repeat"
+  },
+  "chipRepeatDefault": {
+    "message": "Repeat"
+  },
+  "todayLabel": {
+    "message": "Today"
+  },
+  "overdueLabel": {
+    "message": "Overdue"
+  },
+  "untitledLabel": {
+    "message": "Untitled"
+  },
+  "markNotDone": {
+    "message": "Mark as not done"
+  },
+  "markDone": {
+    "message": "Mark as done"
+  },
+  "taskAdded": {
+    "message": "Task added."
+  },
+  "taskCompleted": {
+    "message": "Task completed."
+  },
+  "taskReopened": {
+    "message": "Task reopened."
+  },
+  "toastTaskAdded": {
+    "message": "Task $1 added"
+  },
+  "couldNotUpdateTask": {
+    "message": "Could not update task: $1"
+  },
+  "couldNotReloadTasks": {
+    "message": "Could not reload tasks: $1"
+  },
+  "couldNotLoadTasks": {
+    "message": "Could not load tasks: $1"
+  },
+  "couldNotOpenCapture": {
+    "message": "Could not open capture: $1"
+  },
+  "pleaseEnterTitle": {
+    "message": "Please enter a task title."
+  },
+  "pleaseSelectProject": {
+    "message": "Please select a project."
+  },
+  "optionsTitle": {
+    "message": "Vikunja Settings"
+  },
+  "optionsConnection": {
+    "message": "Connection"
+  },
+  "labelBaseUrl": {
+    "message": "Vikunja URL"
+  },
+  "hintBaseUrl": {
+    "message": "The address of your Vikunja instance, without a trailing slash."
+  },
+  "labelToken": {
+    "message": "API Token"
+  },
+  "hintToken": {
+    "message": "Create an API token in Vikunja under Settings → API Tokens. Give the token at least these permissions:"
+  },
+  "hintOptionalScopes": {
+    "message": "The optional features below need a few more scopes:"
+  },
+  "scopeQuickAddMagic": {
+    "message": "<strong>Quick Add Magic</strong> in the popup (<code>*label</code>, <code>+project</code>, <code>!priority</code>, <code>@assignee</code>): <code>labels</code> read_all &amp; create, <code>tasks_labels</code> create, <code>projects_users</code> read_all"
+  },
+  "scopeElementTag": {
+    "message": "<strong>Element auto-assign tag</strong> (below): <code>labels</code> read_all &amp; create, <code>tasks_labels</code> create"
+  },
+  "optionsDefaults": {
+    "message": "Defaults"
+  },
+  "labelDefaultProject": {
+    "message": "Default project"
+  },
+  "noDefaultProject": {
+    "message": "No default project"
+  },
+  "hintDefaultProject": {
+    "message": "Tasks added from the popup and the capture window default to this project."
+  },
+  "labelDueTodayDefault": {
+    "message": "Set due date to today by default"
+  },
+  "hintDueTodayDefault": {
+    "message": "New tasks get a due date of today (at Vikunja's nearest-hour time)."
+  },
+  "labelSortBy": {
+    "message": "Default sort order"
+  },
+  "hintSortBy": {
+    "message": "Used for the popup task list. Manual sorting needs a default project (Vikunja only orders by position inside a project view); otherwise the list falls back to newest first. You can change the order and direction from the popup."
+  },
+  "labelRememberLastSort": {
+    "message": "Remember last sort choice"
+  },
+  "hintRememberLastSort": {
+    "message": "When enabled, the sort you pick in the popup is stored locally in the extension and overrides this default."
+  },
+  "labelCustomFilter": {
+    "message": "Custom filter for the task list (optional)"
+  },
+  "hintCustomFilter": {
+    "message": "Applied to the popup task list. Setting a custom filter replaces the default <code>done = false</code> filter (which hides completed tasks). See <a href=\"https://vikunja.io/docs/filters\" target=\"_blank\" rel=\"noopener noreferrer\">vikunja.io/docs/filters</a>."
+  },
+  "optionsElement": {
+    "message": "Matrix Element Integration"
+  },
+  "hintElement": {
+    "message": "Add a Matrix Element web instance to get an “Add to Vikunja” button on every message. The extension asks for permission to read the page, then adds the task through your Vikunja connection."
+  },
+  "addElementInstance": {
+    "message": "Add Element instance"
+  },
+  "labelElementReactAfterAdd": {
+    "message": "React with 📝 to the message after adding it to Vikunja"
+  },
+  "hintElementReactAfterAdd": {
+    "message": "After a message is added as a task, Element reacts to it with 📝 so everyone in the room can see it was captured. The reaction is sent by Element itself using your logged-in session."
+  },
+  "labelElementTag": {
+    "message": "Auto-assign tag"
+  },
+  "hintElementTag": {
+    "message": "Every task added from Element gets this tag. Leave empty to add tasks without a tag. The tag is created in Vikunja automatically if it does not exist yet."
+  },
+  "saveButton": {
+    "message": "Save"
+  },
+  "testConnectionButton": {
+    "message": "Test connection"
+  },
+  "dialogAddElementTitle": {
+    "message": "Add Element instance"
+  },
+  "dialogElementUrlLabel": {
+    "message": "Element URL"
+  },
+  "hintElementUrl": {
+    "message": "The address of your Element web instance. You will be asked to grant the extension access to it."
+  },
+  "dialogAddButton": {
+    "message": "Add"
+  },
+  "dialogCancelButton": {
+    "message": "Cancel"
+  },
+  "errValidUrl": {
+    "message": "Please enter a valid Vikunja URL (e.g. https://try.vikunja.io)."
+  },
+  "errValidToken": {
+    "message": "Please enter your Vikunja API token."
+  },
+  "settingsSaved": {
+    "message": "Settings saved."
+  },
+  "couldNotSaveSettings": {
+    "message": "Could not save settings: $1"
+  },
+  "permissionDeniedFor": {
+    "message": "Permission denied for $1"
+  },
+  "connectedSuccess": {
+    "message": "Connected successfully."
+  },
+  "connectedAs": {
+    "message": "Connected successfully as $1."
+  },
+  "connectedNoProjects": {
+    "message": "Connected, but could not load projects: $1"
+  },
+  "connectionFailed": {
+    "message": "Connection failed: $1"
+  },
+  "badgeGranted": {
+    "message": "Granted"
+  },
+  "badgeNotGranted": {
+    "message": "Not granted"
+  },
+  "removeButton": {
+    "message": "Remove"
+  },
+  "removedInstance": {
+    "message": "Removed $1."
+  },
+  "errValidElementUrl": {
+    "message": "Please enter a valid Element URL (e.g. https://app.element.io)."
+  },
+  "elementAccessNotGranted": {
+    "message": "Access to that Element instance was not granted."
+  },
+  "addedElement": {
+    "message": "Added $1. You can now add tasks from Element."
+  },
+  "couldNotAddElement": {
+    "message": "Could not add instance: $1"
+  },
+  "captureTitle": {
+    "message": "Add task to Vikunja"
+  },
+  "fieldTitle": {
+    "message": "Title"
+  },
+  "fieldProject": {
+    "message": "Project"
+  },
+  "fieldDueToday": {
+    "message": "Due today"
+  },
+  "hintDueTodayCapture": {
+    "message": "Set the task due date to today"
+  },
+  "fieldDescription": {
+    "message": "Description (optional)"
+  },
+  "cancelButton": {
+    "message": "Cancel"
+  },
+  "addTaskButton": {
+    "message": "Add task"
+  },
+  "selectProject": {
+    "message": "Select a project"
+  },
+  "noProjectsFound": {
+    "message": "No projects found — create one in Vikunja first."
+  },
+  "lostPermissions": {
+    "message": "Looks like we lost permissions to access your Vikunja. You can grant access below."
+  },
+  "couldNotLoadProjects": {
+    "message": "Could not load projects: $1"
+  },
+  "addToVikunja": {
+    "message": "Add to Vikunja"
+  },
+  "contextMenuAddToVikunja": {
+    "message": "Add to Vikunja…"
+  },
+  "couldNotAddTask": {
+    "message": "Could not add task to Vikunja."
+  },
+  "addTaskFallback": {
+    "message": "Add task"
+  },
+  "messageFrom": {
+    "message": "Message from $1"
+  },
+  "viewMessageLabel": {
+    "message": "View message"
+  },
+  "errRequestOrigin": {
+    "message": "Request did not come from a registered Element instance."
+  },
+  "errNoMessageText": {
+    "message": "No message text to add."
+  },
+  "errElementNotLoggedIn": {
+    "message": "Element is not logged in."
+  },
+  "errNoRoomForEvent": {
+    "message": "No room found for the event."
+  },
+  "errScriptingUnavailable": {
+    "message": "Scripting API unavailable."
+  },
+  "errNoTabToReact": {
+    "message": "No tab to react in."
+  },
+  "errMissingEventId": {
+    "message": "Missing event id."
+  },
+  "errNoTabToRead": {
+    "message": "No tab to read from."
+  },
+  "errMissingRoomId": {
+    "message": "Missing room id."
+  },
+  "errNotConfigured": {
+    "message": "Vikunja is not configured yet."
+  },
+  "errNoLabelTitle": {
+    "message": "No label title given."
+  },
+  "errUnreachable": {
+    "message": "Could not reach Vikunja at $1: $2"
+  },
+  "errRequestFailed": {
+    "message": "Request failed with status $1"
+  }
+}

@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
+const { installI18nMock } = require('./lib/i18n-mock');
 const src = fs.readFileSync(path.join(__dirname, '..', 'content/element.js'), 'utf8');
 
 const observerCallbacks = [];
@@ -163,6 +164,8 @@ global.chrome = {
   },
 };
 global.location = { hash: '#/room/!abc:server', pathname: '/' };
+installI18nMock();
+eval(fs.readFileSync(path.join(__dirname, '..', 'lib/i18n.js'), 'utf8'));
 
 const body = makeEl('body');
 const doc = makeEl('document');

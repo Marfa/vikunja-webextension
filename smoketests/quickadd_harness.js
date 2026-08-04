@@ -1,6 +1,9 @@
 'use strict';
 const path = require('path');
+const { installI18nMock } = require('./lib/i18n-mock');
 global.chrome = { storage: { sync: { get: async () => ({}) } } };
+installI18nMock();
+require(path.join(__dirname, '..', 'lib/i18n.js'));
 require(path.join(__dirname, '..', 'lib/vikunja.js'));
 require(path.join(__dirname, '..', 'lib/quick-add.js'));
 const { parseTaskText, PrefixMode, analyzeTaskText, removeSpan } = globalThis.QuickAdd;

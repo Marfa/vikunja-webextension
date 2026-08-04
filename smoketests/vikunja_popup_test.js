@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { installI18nMock } = require('./lib/i18n-mock');
 
 function fakeElement(id) {
   const el = {
@@ -218,12 +219,16 @@ global.document = {
   createElement: (tag) => fakeElement(`<${tag}>`),
   createElementNS: (ns, tag) => fakeElement(`<svg:${tag}>`),
   createTextNode: (text) => ({ textContent: String(text) }),
+  querySelectorAll: () => [],
 };
 
 global.window.VikunjaLib = VikunjaLib;
 globalThis.VikunjaLib = VikunjaLib;
 
 const projectRoot = path.join(__dirname, '..');
+installI18nMock();
+eval(fs.readFileSync(path.join(projectRoot, 'lib/i18n.js'), 'utf8'));
+global.window.I18n = globalThis.I18n;
 const quickAddSrc = fs.readFileSync(path.join(projectRoot, 'lib/quick-add.js'), 'utf8');
 eval(quickAddSrc);
 global.window.QuickAdd = globalThis.QuickAdd;

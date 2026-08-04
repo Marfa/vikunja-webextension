@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
+const { installI18nMock } = require('./lib/i18n-mock');
 const src = fs.readFileSync(path.join(__dirname, '..', 'lib/vikunja.js'), 'utf8');
 const bgSrc = fs.readFileSync(path.join(__dirname, '..', 'background/background.js'), 'utf8');
 
@@ -68,6 +69,8 @@ global.chrome = {
   tabs: { query: async () => [{ id: 1, url: 'https://element.example/' }] },
   windows: { create: (d) => d },
 };
+installI18nMock();
+eval(fs.readFileSync(path.join(__dirname, '..', 'lib/i18n.js'), 'utf8'));
 
 global.fetch = async (url, opts) => {
   const u = new URL(url);
@@ -121,7 +124,7 @@ const sendRaw = (message, sender) => new Promise((resolve) => {
   const registered = chrome.scripting.registered[0];
   assert.equal(registered.id, 'vikunja-element');
   assert.deepStrictEqual(registered.matches, ['https://element.example/*']);
-  assert.deepStrictEqual(registered.js, ['content/element.js']);
+  assert.deepStrictEqual(registered.js, ['lib/i18n.js', 'content/element.js']);
   assert.deepStrictEqual(registered.css, ['content/element.css']);
 
   // The script is also re-injected into tabs that were already open when the
@@ -131,7 +134,7 @@ const sendRaw = (message, sender) => new Promise((resolve) => {
   assert.equal(chrome.scripting.executeCalls.length, 1, 'content script re-injected into the open tab');
   assert.deepStrictEqual(
     chrome.scripting.executeCalls[0],
-    { target: { tabId: 1, allFrames: true }, files: ['content/element.js'] },
+    { target: { tabId: 1, allFrames: true }, files: ['lib/i18n.js', 'content/element.js'] },
   );
   assert.deepStrictEqual(
     chrome.scripting.cssCalls,

@@ -1,6 +1,8 @@
 (() => {
   'use strict';
 
+  window.I18n.applyPage();
+
   const {
     api,
     getConfig,
@@ -13,6 +15,7 @@
     requestHostPermissions,
   } = window.VikunjaLib;
   const { openOptions: uiOpenOptions, showToast: uiShowToast, fillProjectSelect: uiFillProjectSelect } = window.UiLib;
+  const { t } = window.I18n;
 
   const configPrompt = document.getElementById('config-prompt');
   const configMsg = document.getElementById('config-msg');
@@ -45,7 +48,7 @@
   function fillProjects(projects, selectedId) {
     uiFillProjectSelect(projectSelect, projects, {
       selectedId,
-      placeholder: 'Select a project',
+      placeholder: t('selectProject', 'Select a project'),
       fallbackToFirst: true,
     });
   }
@@ -54,13 +57,13 @@
     const config = await getConfig();
     baseUrl = config.baseUrl;
     if (!baseUrl) {
-      configMsg.textContent = 'Vikunja is not configured yet.';
+      configMsg.textContent = t('notConfigured', 'Vikunja is not configured yet.');
       configPrompt.hidden = false;
       return;
     }
     const hostPatterns = hostPermissionPatterns(config);
     if (!await hasHostPermissions(hostPatterns)) {
-      configMsg.textContent = 'Vikunja is configured, but access to your Vikunja server is not granted yet.';
+      configMsg.textContent = t('configNoAccess', 'Vikunja is configured, but access to your Vikunja server is not granted yet.');
       grantAccessBtn.hidden = false;
       configPrompt.hidden = false;
       return;
@@ -70,7 +73,7 @@
     try {
       const [projects, prefs] = await Promise.all([listProjects(), getPrefs()]);
       if (!projects.length) {
-        throw new Error('No projects found — create one in Vikunja first.');
+        throw new Error(t('noProjectsFound', 'No projects found — create one in Vikunja first.'));
       }
       fillProjects(projects, prefs.defaultProjectId);
       dueTodayInput.checked = prefs.dueToday;
@@ -79,10 +82,10 @@
       titleInput.select();
     } catch (e) {
       if (!await hasHostPermissions(hostPatterns)) {
-        configMsg.textContent = 'Looks like we lost permissions to access your Vikunja. You can grant access below.';
+        configMsg.textContent = t('lostPermissions', 'Looks like we lost permissions to access your Vikunja. You can grant access below.');
         grantAccessBtn.hidden = false;
       } else {
-        configMsg.textContent = `Could not load projects: ${e.message}`;
+        configMsg.textContent = t('couldNotLoadProjects', 'Could not load projects: $1', [e.message]);
       }
       configPrompt.hidden = false;
     }
@@ -92,12 +95,12 @@
     e.preventDefault();
     const title = titleInput.value.trim();
     if (!title) {
-      setError('Please enter a task title.');
+      setError(t('pleaseEnterTitle', 'Please enter a task title.'));
       titleInput.focus();
       return;
     }
     if (!projectSelect.value) {
-      setError('Please select a project.');
+      setError(t('pleaseSelectProject', 'Please select a project.'));
       projectSelect.focus();
       return;
     }
@@ -113,7 +116,7 @@
         body.due_date = dueTodayISO();
       }
       const created = await createTask(projectSelect.value, body);
-      uiShowToast(toastEl, 'Task added.', {
+      uiShowToast(toastEl, t('taskAdded', 'Task added.'), {
         link: { id: created.id, href: `${baseUrl}/tasks/${created.id}` },
       });
       setTimeout(() => window.close(), 4000);
@@ -132,7 +135,7 @@
       if (await requestHostPermissions(hostPermissionPatterns(config))) {
         init();
       } else {
-        configMsg.textContent = 'Access to your Vikunja server was not granted. You can try again or open the settings.';
+        configMsg.textContent = t('accessNotGranted', 'Access to your Vikunja server was not granted. You can try again or open the settings.');
       }
     } finally {
       grantAccessBtn.disabled = false;

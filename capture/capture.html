@@ -2,53 +2,54 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Add task to Vikunja</title>
+  <title data-i18n="captureTitle">Add task to Vikunja</title>
   <link rel="stylesheet" href="../styles/common.css" />
   <link rel="stylesheet" href="capture.css" />
 </head>
 <body>
   <header class="header">
     <img src="../icons/icon-32.png" alt="Vikunja logo" width="28" height="28" />
-    <span class="title">Add task to Vikunja</span>
+    <span class="title" data-i18n="captureTitle">Add task to Vikunja</span>
   </header>
 
   <section id="config-prompt" class="view" hidden>
-    <p id="config-msg" class="empty">Vikunja is not configured yet.</p>
+    <p id="config-msg" class="empty" data-i18n="notConfigured">Vikunja is not configured yet.</p>
     <div class="actions center">
-      <button id="grant-access" class="primary" hidden>Grant access</button>
-      <button id="open-settings" class="primary">Open settings</button>
+      <button id="grant-access" class="primary" hidden data-i18n="grantAccess">Grant access</button>
+      <button id="open-settings" class="primary" data-i18n="openSettings">Open settings</button>
     </div>
   </section>
 
   <form id="capture-form" class="view" hidden>
     <label class="field">
-      <span class="label">Title</span>
+      <span class="label" data-i18n="fieldTitle">Title</span>
       <input type="text" id="title" name="title" maxlength="500" autocomplete="off" spellcheck="false" required />
     </label>
     <label class="field">
-      <span class="label">Project</span>
+      <span class="label" data-i18n="fieldProject">Project</span>
       <select id="project"></select>
     </label>
     <label class="field">
-      <span class="label">Due today</span>
+      <span class="label" data-i18n="fieldDueToday">Due today</span>
       <span class="row">
         <input type="checkbox" id="due-today" name="dueToday" />
-        <span class="hint">Set the task due date to today</span>
+        <span class="hint" data-i18n="hintDueTodayCapture">Set the task due date to today</span>
       </span>
     </label>
     <label class="field">
-      <span class="label">Description (optional)</span>
+      <span class="label" data-i18n="fieldDescription">Description (optional)</span>
       <textarea id="description" name="description" rows="4" spellcheck="false"></textarea>
     </label>
     <div class="actions">
       <span id="error" class="error" hidden></span>
-      <button type="button" id="cancel" class="secondary">Cancel</button>
-      <button type="submit" id="add" class="primary">Add task</button>
+      <button type="button" id="cancel" class="secondary" data-i18n="cancelButton">Cancel</button>
+      <button type="submit" id="add" class="primary" data-i18n="addTaskButton">Add task</button>
     </div>
   </form>
 
   <div id="toast" class="toast" hidden></div>
 
+  <script src="../lib/i18n.js"></script>
   <script src="../lib/vikunja.js"></script>
   <script src="../lib/ui.js"></script>
   <script src="capture.js"></script>
