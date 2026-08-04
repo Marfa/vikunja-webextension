@@ -44,7 +44,7 @@ browser.
 
 ## Language
 
-The extension ships in **English** and **German**. The language is chosen from
+The extension ships in **English**, **German** and **Spanish**. The language is chosen from
 your browser's UI language (English is the fallback), so no in-extension setting
 is needed. The Quick Add Magic syntax stays English by design: its project,
 label, priority, date and repeat tokens (`+`, `*`, `!`, `@`, `tomorrow`,
