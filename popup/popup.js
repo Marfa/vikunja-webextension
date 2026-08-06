@@ -35,6 +35,8 @@
   const loading = document.getElementById('loading');
   const list = document.getElementById('list');
   const searchInput = document.getElementById('search');
+  const projectBar = document.getElementById('project-bar');
+  const projectFilter = document.getElementById('project-filter');
   const quickForm = document.getElementById('quick-add');
   const quickTitle = document.getElementById('quick-title');
   const quickChips = document.getElementById('quick-chips');
@@ -60,6 +62,7 @@
   let tasks = [];
   let quickAddMode = PrefixMode.Default;
   let currentProjectId = null;
+  let listFilter = null; // project id | 'today' | 'upcoming'
   let labelOptions = null;
   const usersByProject = new Map();
   let currentSort = { mode: 'created', orderBy: 'desc' };
@@ -82,16 +85,50 @@
 
   const DATE_PRESETS = ['today', 'tomorrow', 'in 2 days', 'in 3 days', 'in 1 week', 'next monday', 'next week'];
   const REPEAT_PRESETS = ['every day', 'every 2 days', 'every week', 'every 2 weeks', 'every month'];
+  const FILTER_TODAY = 'today';
+  const FILTER_UPCOMING = 'upcoming';
+
+  function isProjectFilter(filter) {
+    return typeof filter === 'number' && Number.isFinite(filter) && filter > 0;
+  }
+
+  function findInboxProject() {
+    return (
+      [...projectsById.values()].find((p) => {
+        const title = String(p.title || '').trim().toLowerCase();
+        return title === 'inbox' || title === 'входящие';
+      }) || null
+    );
+  }
+
+  function defaultListFilter() {
+    if (prefs.defaultProjectId) return prefs.defaultProjectId;
+    const inbox = findInboxProject();
+    return inbox ? inbox.id : FILTER_TODAY;
+  }
+
+  function projectsForFilterMenu() {
+    const inbox = findInboxProject();
+    const inboxId = inbox ? inbox.id : null;
+    const rest = [...projectsById.values()]
+      .filter((p) => p.id !== inboxId)
+      .sort((a, b) =>
+        String(a.title || '').localeCompare(String(b.title || ''), undefined, { sensitivity: 'base' }),
+      );
+    return { inbox, rest };
+  }
 
   function showView(view) {
     [configPrompt, loading, list].forEach((v) => {
       v.hidden = v !== view;
     });
     // If we are in the config stage, also disable the top bar
-    searchInput.hidden = view === configPrompt;
-    sortBtn.hidden = view === configPrompt;
-    addSiteBtn.hidden = view === configPrompt;
-    openSettingsBtn.hidden = view === configPrompt;
+    const ready = view !== configPrompt;
+    searchInput.hidden = !ready;
+    projectBar.hidden = !ready;
+    sortBtn.hidden = !ready;
+    addSiteBtn.hidden = !ready;
+    openSettingsBtn.hidden = !ready;
   }
 
   function setQuickError(message) {
@@ -371,6 +408,75 @@
     }
   }
 
+  // Popup list filter: remembered choice wins, then the options default project,
+  // otherwise Inbox (or Today if there is no Inbox). Stored as lastListProjectId.
+  async function resolveListProject() {
+    try {
+      const stored = await api.storage.local.get({ lastListProjectId: 'USE_DEFAULT' });
+      const v = stored.lastListProjectId;
+      if (v === 'USE_DEFAULT') {
+        listFilter = defaultListFilter();
+        return;
+      }
+      if (v === FILTER_TODAY || v === FILTER_UPCOMING) {
+        listFilter = v;
+        return;
+      }
+      if (v === null || v === '') {
+        // Migrate the old "All projects" choice.
+        listFilter = defaultListFilter();
+        return;
+      }
+      const id = Number(v);
+      listFilter = Number.isFinite(id) && id > 0 ? id : defaultListFilter();
+    } catch (e) {
+      listFilter = defaultListFilter();
+    }
+  }
+
+  function renderProjectFilter() {
+    projectFilter.textContent = '';
+    const { inbox, rest } = projectsForFilterMenu();
+    if (inbox) {
+      projectFilter.appendChild(chipOption(String(inbox.id), inbox.title));
+    }
+    projectFilter.appendChild(chipOption(FILTER_TODAY, t('todayLabel', 'Today')));
+    projectFilter.appendChild(chipOption(FILTER_UPCOMING, t('projectFilterUpcoming', 'Upcoming')));
+    for (const p of rest) {
+      projectFilter.appendChild(chipOption(String(p.id), p.title));
+    }
+    if (isProjectFilter(listFilter) && !projectsById.has(listFilter)) {
+      projectFilter.appendChild(chipOption(String(listFilter), `#${listFilter}`));
+    }
+    projectFilter.value = String(listFilter);
+  }
+
+  async function setListFilter(next) {
+    let normalized;
+    if (next === FILTER_TODAY || next === FILTER_UPCOMING) {
+      normalized = next;
+    } else {
+      const id = Number(next);
+      normalized = Number.isFinite(id) && id > 0 ? id : defaultListFilter();
+    }
+    if (listFilter === normalized) return;
+    listFilter = normalized;
+    projectViews = null;
+    try {
+      await api.storage.local.set({ lastListProjectId: listFilter });
+    } catch (e) {
+      // Choice still applies for this session.
+    }
+    if (isProjectFilter(listFilter) && projectsById.has(listFilter)) {
+      currentProjectId = listFilter;
+    }
+    try {
+      await refreshTasks();
+    } catch (e) {
+      uiShowToast(toastEl, t('couldNotSwitchProject', 'Could not switch project: $1', [e.message]));
+    }
+  }
+
   function hasDueDate(dateStr) {
     if (!dateStr) return false;
     const due = new Date(dateStr);
@@ -439,7 +545,7 @@
     taskEmpty.textContent = query ? t('noMatchingTasks', 'No matching tasks.') : t('noTasks', 'No tasks here yet.');
 
     const now = Date.now();
-    const showProject = !prefs.defaultProjectId;
+    const showProject = !isProjectFilter(listFilter);
     visible.forEach((task) => {
       const li = document.createElement('li');
       li.className = 'task';
@@ -534,16 +640,16 @@
   }
 
   // Vikunja only orders by position through a project view, so manual sorting
-  // needs a default project; otherwise fall back to newest first.
+  // needs a selected project; smart filters fall back to due date.
   function effectiveSortParams() {
     const mode = SORT_MODES[currentSort.mode];
     if (!mode.needsView) {
       return { sortBy: mode.sortBy, orderBy: currentSort.orderBy };
     }
-    if (!prefs.defaultProjectId) {
-      return { sortBy: 'created', orderBy: 'desc' };
+    if (isProjectFilter(listFilter)) {
+      return { sortBy: 'position', orderBy: currentSort.orderBy, needsView: true };
     }
-    return { sortBy: 'position', orderBy: currentSort.orderBy, needsView: true };
+    return { sortBy: 'due_date', orderBy: 'asc' };
   }
 
   async function resolveManualView(projectId) {
@@ -560,15 +666,24 @@
   }
 
   async function loadTasks() {
-    const opts = { filter: prefs.customFilter || 'done = false' };
-    if (prefs.defaultProjectId) {
-      opts.projectId = prefs.defaultProjectId;
+    const base = prefs.customFilter || 'done = false';
+    const opts = {};
+    if (listFilter === FILTER_TODAY) {
+      // Overdue + due today (Todoist-style Today).
+      opts.filter = `${base} && due_date < now+1d/d`;
+    } else if (listFilter === FILTER_UPCOMING) {
+      opts.filter = `${base} && due_date >= now/d`;
+    } else {
+      opts.filter = base;
+      if (isProjectFilter(listFilter)) {
+        opts.projectId = listFilter;
+      }
     }
     const sort = effectiveSortParams();
     opts.sortBy = sort.sortBy;
     opts.orderBy = sort.orderBy;
     if (sort.needsView) {
-      const viewId = await resolveManualView(prefs.defaultProjectId);
+      const viewId = await resolveManualView(listFilter);
       if (viewId) {
         opts.viewId = viewId;
       } else {
@@ -689,6 +804,11 @@
       projectsById = new Map(projects.map((pr) => [pr.id, pr]));
       quickTitle.placeholder = PLACEHOLDERS[quickAddMode] || t('quickAddPlaceholder', 'Add a task…');
       await resolveCurrentProject();
+      await resolveListProject();
+      if (isProjectFilter(listFilter) && projectsById.has(listFilter)) {
+        currentProjectId = listFilter;
+      }
+      renderProjectFilter();
       await resolveSort();
       sortBtn.title = sortLabel();
       sortBtn.setAttribute('aria-label', sortLabel());
@@ -993,6 +1113,14 @@
     renderChips();
   });
   searchInput.addEventListener('input', renderTasks);
+  projectFilter.addEventListener('change', () => {
+    const raw = projectFilter.value;
+    if (raw === FILTER_TODAY || raw === FILTER_UPCOMING) {
+      setListFilter(raw);
+    } else {
+      setListFilter(Number(raw));
+    }
+  });
 
   load();
 })();

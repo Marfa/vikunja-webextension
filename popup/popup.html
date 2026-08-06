@@ -57,6 +57,15 @@
     </button>
   </header>
 
+  <div id="project-bar" class="project-bar" hidden>
+    <label class="project-filter-label" for="project-filter" data-i18n="projectFilterLabel">Project</label>
+    <select
+      id="project-filter"
+      aria-label="Filter by project"
+      data-i18n-aria-label="projectFilterAriaLabel"
+    ></select>
+  </div>
+
   <section id="config-prompt" class="view" hidden>
     <p class="empty" data-i18n="notConfigured">Vikunja is not configured yet.</p>
     <button id="grant-access" class="primary" hidden data-i18n="grantAccess">Grant access</button>

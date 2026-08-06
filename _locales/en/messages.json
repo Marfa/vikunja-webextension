@@ -32,6 +32,23 @@
   "searchAriaLabel": {
     "message": "Search tasks"
   },
+  "projectFilterLabel": {
+    "message": "Project"
+  },
+  "projectFilterAriaLabel": {
+    "message": "Filter by project"
+  },
+  "projectFilterUpcoming": {
+    "message": "Upcoming"
+  },
+  "couldNotSwitchProject": {
+    "message": "Could not switch project: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
   "sortTasksTitle": {
     "message": "Sort tasks"
   },
@@ -231,7 +248,7 @@
     "message": "No default project"
   },
   "hintDefaultProject": {
-    "message": "Tasks added from the popup and the capture window default to this project."
+    "message": "Initial project for the popup list filter and for new tasks from the popup/capture. You can switch projects in the popup; the choice is remembered."
   },
   "labelDueTodayDefault": {
     "message": "Set due date to today by default"

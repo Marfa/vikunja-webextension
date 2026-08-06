@@ -32,6 +32,23 @@
   "searchAriaLabel": {
     "message": "Buscar tareas"
   },
+  "projectFilterLabel": {
+    "message": "Proyecto"
+  },
+  "projectFilterAriaLabel": {
+    "message": "Filtrar por proyecto"
+  },
+  "projectFilterUpcoming": {
+    "message": "Próximas"
+  },
+  "couldNotSwitchProject": {
+    "message": "No se pudo cambiar de proyecto: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
   "sortTasksTitle": {
     "message": "Ordenar tareas"
   },
@@ -231,7 +248,7 @@
     "message": "Sin proyecto por defecto"
   },
   "hintDefaultProject": {
-    "message": "Las tareas añadidas desde el popup y la ventana de captura se asignan por defecto a este proyecto."
+    "message": "Proyecto inicial para el filtro de la lista del popup y para nuevas tareas desde el popup/captura. Puedes cambiar de proyecto en el popup; la elección se recuerda."
   },
   "labelDueTodayDefault": {
     "message": "Establecer la fecha de vencimiento en hoy por defecto"
