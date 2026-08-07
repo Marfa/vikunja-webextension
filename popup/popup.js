@@ -541,6 +541,44 @@
     return label;
   }
 
+  // Title is a "link task" when it is solely a markdown link or a bare http(s) URL.
+  function parseTitleLink(title) {
+    const raw = String(title || '').trim();
+    if (!raw) return null;
+    const md = raw.match(/^\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)$/i);
+    if (md) return { label: md[1].trim() || md[2], href: md[2] };
+    if (/^https?:\/\/\S+$/i.test(raw)) return { label: raw, href: raw };
+    return null;
+  }
+
+  // Replace inline `[text](url)` markdown with clickable anchors; keep surrounding text.
+  function fillTitleWithMarkdownLinks(el, titleText) {
+    const raw = String(titleText || '');
+    const re = /\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)/gi;
+    let last = 0;
+    let match;
+    while ((match = re.exec(raw))) {
+      if (match.index > last) {
+        el.appendChild(document.createTextNode(raw.slice(last, match.index)));
+      }
+      const anchor = document.createElement('a');
+      anchor.href = match[2];
+      anchor.target = '_blank';
+      anchor.rel = 'noopener noreferrer';
+      anchor.textContent = match[1].trim() || match[2];
+      anchor.addEventListener('click', (e) => e.stopPropagation());
+      el.appendChild(anchor);
+      last = match.index + match[0].length;
+    }
+    if (last === 0) {
+      el.textContent = raw || t('untitledLabel', 'Untitled');
+      return;
+    }
+    if (last < raw.length) {
+      el.appendChild(document.createTextNode(raw.slice(last)));
+    }
+  }
+
   function renderTasks() {
     taskList.textContent = '';
     const query = searchInput.value.trim().toLowerCase();
@@ -571,13 +609,22 @@
       const top = document.createElement('div');
       top.className = 'task-top';
 
-      const title = document.createElement('span');
-      title.className = 'task-title';
-      title.textContent = task.title || t('untitledLabel', 'Untitled');
-      title.title = task.title || t('untitledLabel', 'Untitled');
-      title.addEventListener('click', () => {
-        window.open(`${baseUrl}/tasks/${task.id}`, '_blank');
-      });
+      const linkTask = parseTitleLink(task.title);
+      const title = document.createElement(linkTask ? 'a' : 'span');
+      title.className = linkTask ? 'task-title task-title--link' : 'task-title';
+      if (linkTask) {
+        title.href = linkTask.href;
+        title.target = '_blank';
+        title.rel = 'noopener noreferrer';
+        title.textContent = linkTask.label;
+        title.title = linkTask.href;
+      } else {
+        fillTitleWithMarkdownLinks(title, task.title);
+        title.title = task.title || t('untitledLabel', 'Untitled');
+        title.addEventListener('click', () => {
+          window.open(`${baseUrl}/tasks/${task.id}`, '_blank');
+        });
+      }
       top.appendChild(title);
 
       if (showProject && projectsById.has(task.project_id)) {

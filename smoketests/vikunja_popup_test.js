@@ -678,6 +678,72 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
     'Upcoming uses the same within-day sort, got ' + JSON.stringify(upcomingOrder),
   );
 
+  // Markdown link titles: pure link-task opens the URL; inline links render without raw syntax
+  const mdLinkTasks = [
+    {
+      id: 501,
+      title: '[Questions — DTF](https://dtf.ru/ask)',
+      description: '',
+      project_id: 1,
+      done: false,
+      due_date: '0001-01-01T00:00:00Z',
+      labels: null,
+    },
+    {
+      id: 502,
+      title: 'Read [docs](https://example.com/x) now',
+      description: '',
+      project_id: 1,
+      done: false,
+      due_date: '0001-01-01T00:00:00Z',
+      labels: null,
+    },
+    {
+      id: 503,
+      title: 'https://example.com/bare',
+      description: '',
+      project_id: 1,
+      done: false,
+      due_date: '0001-01-01T00:00:00Z',
+      labels: null,
+    },
+  ];
+  VikunjaLib.getPrefs = () => Promise.resolve({ defaultProjectId: 1, dueToday: false, customFilter: '', sortBy: 'created', rememberLastSort: false });
+  VikunjaLib.listTasks = (opts) => {
+    calls.listTasks.push(opts);
+    return Promise.resolve(JSON.parse(JSON.stringify(mdLinkTasks)));
+  };
+  ['project-filter', 'search', 'sort-btn', 'quick-title', 'quick-add', 'add-site', 'logo', 'grant-access'].forEach((id) => {
+    if (ids[id]) ids[id].listeners = {};
+  });
+  storage.set('lastListProjectId', 1);
+  ids['search'].value = '';
+  ids['quick-title'].value = '';
+  eval(src);
+  await new Promise((r) => { setTimeout(r, 20); });
+  const mdIds = ids['task-list'].childNodes.map((c) => Number(c.getAttribute('data-task-id')));
+  assert(JSON.stringify(mdIds) === JSON.stringify([501, 502, 503]), 'markdown fixture rendered, got ' + JSON.stringify(mdIds));
+  const linkTitle = ids['task-list'].childNodes[0].childNodes[1].childNodes[0].childNodes[0];
+  assert(linkTitle.className.includes('task-title--link'), 'pure markdown title becomes link-task anchor');
+  assert(linkTitle.textContent === 'Questions — DTF', 'link-task shows label, got ' + JSON.stringify(linkTitle.textContent));
+  assert(linkTitle.href === 'https://dtf.ru/ask', 'link-task href is markdown URL, got ' + linkTitle.href);
+  assert(!(linkTitle.listeners.click && linkTitle.listeners.click.length), 'link-task has no Vikunja open handler');
+
+  const mixedTitle = ids['task-list'].childNodes[1].childNodes[1].childNodes[0].childNodes[0];
+  assert(mixedTitle.className === 'task-title', 'mixed title stays a span');
+  const inlineLink = mixedTitle.childNodes.find((c) => c.href === 'https://example.com/x');
+  assert(inlineLink && inlineLink.textContent === 'docs', 'inline markdown link rendered as anchor');
+  assert(mixedTitle.childNodes[0] && mixedTitle.childNodes[0].textContent === 'Read ', 'text before inline link kept');
+  const openedMixed = [];
+  const prevOpen = global.window.open;
+  global.window.open = (url) => openedMixed.push(url);
+  mixedTitle.listeners.click[mixedTitle.listeners.click.length - 1]();
+  assert(openedMixed[0] === 'https://try.vikunja.io/tasks/502', 'mixed title click still opens Vikunja task');
+  global.window.open = prevOpen;
+
+  const bareTitle = ids['task-list'].childNodes[2].childNodes[1].childNodes[0].childNodes[0];
+  assert(bareTitle.className.includes('task-title--link') && bareTitle.href === 'https://example.com/bare', 'bare URL title is a link-task');
+
   // remembered list filter overrides the options default project
   ['project-filter', 'search', 'sort-btn', 'quick-title', 'quick-add', 'add-site', 'logo', 'grant-access'].forEach((id) => {
     if (ids[id]) ids[id].listeners = {};
