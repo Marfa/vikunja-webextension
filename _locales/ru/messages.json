@@ -1,0 +1,472 @@
+{
+  "htmlLang": {
+    "message": "ru"
+  },
+  "extDescription": {
+    "message": "Управление задачами Vikunja из панели браузера: список задач, быстрое добавление и захват текущей страницы."
+  },
+  "cmdOpenPopup": {
+    "message": "Открыть всплывающее окно Vikunja"
+  },
+  "cmdAddSite": {
+    "message": "Добавить текущий сайт как задачу"
+  },
+  "notConfigured": {
+    "message": "Vikunja ещё не настроен."
+  },
+  "grantAccess": {
+    "message": "Разрешить доступ"
+  },
+  "openSettings": {
+    "message": "Открыть настройки"
+  },
+  "configNoAccess": {
+    "message": "Vikunja настроен, но доступ к серверу ещё не разрешён."
+  },
+  "accessNotGranted": {
+    "message": "Доступ к серверу Vikunja не был разрешён. Можно попробовать снова или открыть настройки."
+  },
+  "searchPlaceholder": {
+    "message": "Поиск задач…"
+  },
+  "searchAriaLabel": {
+    "message": "Поиск задач"
+  },
+  "projectFilterLabel": {
+    "message": "Проект"
+  },
+  "projectFilterAriaLabel": {
+    "message": "Фильтр по проекту"
+  },
+  "projectFilterUpcoming": {
+    "message": "Предстоящие"
+  },
+  "couldNotSwitchProject": {
+    "message": "Не удалось переключить проект: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
+  "sortTasksTitle": {
+    "message": "Сортировка задач"
+  },
+  "sortTasksAriaLabel": {
+    "message": "Сортировка задач"
+  },
+  "addSiteTitle": {
+    "message": "Добавить текущую страницу как задачу"
+  },
+  "addSiteAriaLabel": {
+    "message": "Добавить текущую страницу как задачу"
+  },
+  "settingsTitle": {
+    "message": "Настройки"
+  },
+  "settingsAriaLabel": {
+    "message": "Открыть настройки"
+  },
+  "logoTitle": {
+    "message": "Открыть Vikunja"
+  },
+  "logoAriaLabel": {
+    "message": "Открыть Vikunja"
+  },
+  "loadingTasks": {
+    "message": "Загрузка задач…"
+  },
+  "noTasks": {
+    "message": "Здесь пока нет задач."
+  },
+  "noMatchingTasks": {
+    "message": "Подходящих задач нет."
+  },
+  "quickAddPlaceholder": {
+    "message": "Добавить задачу…"
+  },
+  "quickAddPlaceholderVikunja": {
+    "message": "Добавить задачу: +Project *label !1 @user tomorrow"
+  },
+  "quickAddPlaceholderTodoist": {
+    "message": "Добавить задачу: #Project @label !1 +user tomorrow"
+  },
+  "quickAddAriaLabel": {
+    "message": "Добавить задачу"
+  },
+  "addButton": {
+    "message": "Добавить"
+  },
+  "sortManually": {
+    "message": "Вручную"
+  },
+  "sortByTitle": {
+    "message": "По названию"
+  },
+  "sortByCreated": {
+    "message": "По дате создания"
+  },
+  "sortByUpdated": {
+    "message": "По дате обновления"
+  },
+  "sortByDueDate": {
+    "message": "По сроку"
+  },
+  "sortByPriority": {
+    "message": "По приоритету"
+  },
+  "sortLabel": {
+    "message": "Сортировка: $1 ($2)"
+  },
+  "sortAscending": {
+    "message": "по возрастанию"
+  },
+  "sortDescending": {
+    "message": "по убыванию"
+  },
+  "sortAscendingItem": {
+    "message": "По возрастанию ▲"
+  },
+  "sortDescendingItem": {
+    "message": "По убыванию ▼"
+  },
+  "chipProject": {
+    "message": "Проект"
+  },
+  "chipPriority": {
+    "message": "Приоритет"
+  },
+  "chipPriorityDefault": {
+    "message": "Приоритет"
+  },
+  "chipLabel": {
+    "message": "Метка"
+  },
+  "chipLabelCount": {
+    "message": "Метки · $1"
+  },
+  "chipAssignee": {
+    "message": "Исполнитель"
+  },
+  "chipAssigneeCount": {
+    "message": "Исполнители · $1"
+  },
+  "chipAssigneeLoading": {
+    "message": "Исполнители…"
+  },
+  "chipDueDate": {
+    "message": "Срок"
+  },
+  "chipDueDefault": {
+    "message": "Срок"
+  },
+  "chipRepeat": {
+    "message": "Повтор"
+  },
+  "chipRepeatDefault": {
+    "message": "Повтор"
+  },
+  "todayLabel": {
+    "message": "Сегодня"
+  },
+  "overdueLabel": {
+    "message": "Просрочено"
+  },
+  "priorityHigh": {
+    "message": "Высокий"
+  },
+  "priorityUrgent": {
+    "message": "Срочный"
+  },
+  "priorityDoNow": {
+    "message": "СДЕЛАТЬ СЕЙЧАС"
+  },
+  "untitledLabel": {
+    "message": "Без названия"
+  },
+  "markNotDone": {
+    "message": "Отметить как невыполненную"
+  },
+  "markDone": {
+    "message": "Отметить как выполненную"
+  },
+  "taskAdded": {
+    "message": "Задача добавлена."
+  },
+  "taskCompleted": {
+    "message": "Задача выполнена."
+  },
+  "taskReopened": {
+    "message": "Задача снова открыта."
+  },
+  "toastTaskAdded": {
+    "message": "Задача $1 добавлена"
+  },
+  "couldNotUpdateTask": {
+    "message": "Не удалось обновить задачу: $1"
+  },
+  "couldNotReloadTasks": {
+    "message": "Не удалось перезагрузить задачи: $1"
+  },
+  "couldNotLoadTasks": {
+    "message": "Не удалось загрузить задачи: $1"
+  },
+  "couldNotOpenCapture": {
+    "message": "Не удалось открыть захват: $1"
+  },
+  "pleaseEnterTitle": {
+    "message": "Введите название задачи."
+  },
+  "pleaseSelectProject": {
+    "message": "Выберите проект."
+  },
+  "optionsTitle": {
+    "message": "Настройки Vikunja"
+  },
+  "optionsConnection": {
+    "message": "Подключение"
+  },
+  "labelBaseUrl": {
+    "message": "URL Vikunja"
+  },
+  "hintBaseUrl": {
+    "message": "Адрес вашего экземпляра Vikunja без слэша в конце."
+  },
+  "labelToken": {
+    "message": "API-токен"
+  },
+  "hintToken": {
+    "message": "Создайте API-токен в Vikunja: Настройки → API Tokens. Дайте токену как минимум эти права:"
+  },
+  "hintOptionalScopes": {
+    "message": "Для необязательных функций ниже нужны дополнительные права:"
+  },
+  "scopeQuickAddMagic": {
+    "message": "<strong>Quick Add Magic</strong> во всплывающем окне (<code>*label</code>, <code>+project</code>, <code>!priority</code>, <code>@assignee</code>): <code>labels</code> read_all и create, <code>tasks_labels</code> create, <code>projects_users</code> read_all"
+  },
+  "scopeElementTag": {
+    "message": "<strong>Автометка Element</strong> (ниже): <code>labels</code> read_all и create, <code>tasks_labels</code> create"
+  },
+  "optionsDefaults": {
+    "message": "По умолчанию"
+  },
+  "labelDefaultProject": {
+    "message": "Проект по умолчанию"
+  },
+  "noDefaultProject": {
+    "message": "Без проекта по умолчанию"
+  },
+  "hintDefaultProject": {
+    "message": "Начальный проект для фильтра списка во всплывающем окне и для новых задач из popup/захвата. Проект можно сменить во всплывающем окне; выбор запоминается."
+  },
+  "labelDueTodayDefault": {
+    "message": "Ставить срок на сегодня по умолчанию"
+  },
+  "hintDueTodayDefault": {
+    "message": "Новым задачам задаётся срок на сегодня (ближайший час по правилам Vikunja)."
+  },
+  "labelSortBy": {
+    "message": "Сортировка по умолчанию"
+  },
+  "hintSortBy": {
+    "message": "Используется для списка задач во всплывающем окне. Ручная сортировка нужна только с выбранным проектом (Vikunja упорядочивает по позиции внутри представления проекта); иначе список идёт от новых к старым. Порядок и направление можно менять во всплывающем окне."
+  },
+  "labelRememberLastSort": {
+    "message": "Запоминать последнюю сортировку"
+  },
+  "hintRememberLastSort": {
+    "message": "Если включено, сортировка, выбранная во всплывающем окне, сохраняется локально и перекрывает значение по умолчанию."
+  },
+  "labelCustomFilter": {
+    "message": "Свой фильтр для списка задач (необязательно)"
+  },
+  "hintCustomFilter": {
+    "message": "Применяется к списку задач во всплывающем окне. Свой фильтр заменяет стандартный <code>done = false</code> (который скрывает выполненные). См. <a href=\"https://vikunja.io/docs/filters\" target=\"_blank\" rel=\"noopener noreferrer\">vikunja.io/docs/filters</a>."
+  },
+  "optionsElement": {
+    "message": "Интеграция с Matrix Element"
+  },
+  "hintElement": {
+    "message": "Добавьте веб-экземпляр Matrix Element, чтобы на каждом сообщении появилась кнопка «Добавить в Vikunja». Расширение запросит доступ к странице и создаст задачу через ваше подключение к Vikunja."
+  },
+  "addElementInstance": {
+    "message": "Добавить экземпляр Element"
+  },
+  "labelElementReactAfterAdd": {
+    "message": "Ставить реакцию 📝 на сообщение после добавления в Vikunja"
+  },
+  "hintElementReactAfterAdd": {
+    "message": "После добавления сообщения как задачи Element ставит реакцию 📝, чтобы все в комнате видели, что оно сохранено. Реакция отправляется самим Element от вашего сеанса."
+  },
+  "labelElementTag": {
+    "message": "Автоматическая метка"
+  },
+  "hintElementTag": {
+    "message": "Каждая задача из Element получает эту метку. Оставьте пустым, чтобы добавлять задачи без метки. Метка создаётся в Vikunja автоматически, если её ещё нет."
+  },
+  "saveButton": {
+    "message": "Сохранить"
+  },
+  "testConnectionButton": {
+    "message": "Проверить подключение"
+  },
+  "dialogAddElementTitle": {
+    "message": "Добавить экземпляр Element"
+  },
+  "dialogElementUrlLabel": {
+    "message": "URL Element"
+  },
+  "hintElementUrl": {
+    "message": "Адрес вашего веб-экземпляра Element. Вам предложат выдать расширению доступ к нему."
+  },
+  "dialogAddButton": {
+    "message": "Добавить"
+  },
+  "dialogCancelButton": {
+    "message": "Отмена"
+  },
+  "errValidUrl": {
+    "message": "Введите корректный URL Vikunja (например https://try.vikunja.io)."
+  },
+  "errValidToken": {
+    "message": "Введите ваш API-токен Vikunja."
+  },
+  "settingsSaved": {
+    "message": "Настройки сохранены."
+  },
+  "couldNotSaveSettings": {
+    "message": "Не удалось сохранить настройки: $1"
+  },
+  "permissionDeniedFor": {
+    "message": "Нет разрешения для $1"
+  },
+  "connectedSuccess": {
+    "message": "Подключение успешно."
+  },
+  "connectedAs": {
+    "message": "Успешно подключено как $1."
+  },
+  "connectedNoProjects": {
+    "message": "Подключено, но не удалось загрузить проекты: $1"
+  },
+  "connectionFailed": {
+    "message": "Ошибка подключения: $1"
+  },
+  "badgeGranted": {
+    "message": "Разрешено"
+  },
+  "badgeNotGranted": {
+    "message": "Не разрешено"
+  },
+  "removeButton": {
+    "message": "Удалить"
+  },
+  "removedInstance": {
+    "message": "Удалён $1."
+  },
+  "errValidElementUrl": {
+    "message": "Введите корректный URL Element (например https://app.element.io)."
+  },
+  "elementAccessNotGranted": {
+    "message": "Доступ к этому экземпляру Element не был разрешён."
+  },
+  "addedElement": {
+    "message": "Добавлен $1. Теперь можно добавлять задачи из Element."
+  },
+  "couldNotAddElement": {
+    "message": "Не удалось добавить экземпляр: $1"
+  },
+  "captureTitle": {
+    "message": "Добавить задачу в Vikunja"
+  },
+  "fieldTitle": {
+    "message": "Название"
+  },
+  "fieldProject": {
+    "message": "Проект"
+  },
+  "fieldDueToday": {
+    "message": "Срок сегодня"
+  },
+  "hintDueTodayCapture": {
+    "message": "Поставить задаче срок на сегодня"
+  },
+  "fieldDescription": {
+    "message": "Описание (необязательно)"
+  },
+  "cancelButton": {
+    "message": "Отмена"
+  },
+  "addTaskButton": {
+    "message": "Добавить задачу"
+  },
+  "selectProject": {
+    "message": "Выберите проект"
+  },
+  "noProjectsFound": {
+    "message": "Проекты не найдены — сначала создайте один в Vikunja."
+  },
+  "lostPermissions": {
+    "message": "Похоже, доступ к Vikunja пропал. Можно выдать его ниже."
+  },
+  "couldNotLoadProjects": {
+    "message": "Не удалось загрузить проекты: $1"
+  },
+  "addToVikunja": {
+    "message": "Добавить в Vikunja"
+  },
+  "contextMenuAddToVikunja": {
+    "message": "Добавить в Vikunja…"
+  },
+  "couldNotAddTask": {
+    "message": "Не удалось добавить задачу в Vikunja."
+  },
+  "addTaskFallback": {
+    "message": "Добавить задачу"
+  },
+  "messageFrom": {
+    "message": "Сообщение от $1"
+  },
+  "viewMessageLabel": {
+    "message": "Открыть сообщение"
+  },
+  "errRequestOrigin": {
+    "message": "Запрос пришёл не от зарегистрированного экземпляра Element."
+  },
+  "errNoMessageText": {
+    "message": "Нет текста сообщения для добавления."
+  },
+  "errElementNotLoggedIn": {
+    "message": "Element не выполнил вход."
+  },
+  "errNoRoomForEvent": {
+    "message": "Комната для события не найдена."
+  },
+  "errScriptingUnavailable": {
+    "message": "API scripting недоступен."
+  },
+  "errNoTabToReact": {
+    "message": "Нет вкладки для реакции."
+  },
+  "errMissingEventId": {
+    "message": "Не указан id события."
+  },
+  "errNoTabToRead": {
+    "message": "Нет вкладки для чтения."
+  },
+  "errMissingRoomId": {
+    "message": "Не указан id комнаты."
+  },
+  "errNotConfigured": {
+    "message": "Vikunja ещё не настроен."
+  },
+  "errNoLabelTitle": {
+    "message": "Не указано название метки."
+  },
+  "errUnreachable": {
+    "message": "Не удалось достучаться до Vikunja по адресу $1: $2"
+  },
+  "errRequestFailed": {
+    "message": "Запрос завершился со статусом $1"
+  }
+}

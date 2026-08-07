@@ -32,6 +32,23 @@
   "searchAriaLabel": {
     "message": "Aufgaben suchen"
   },
+  "projectFilterLabel": {
+    "message": "Projekt"
+  },
+  "projectFilterAriaLabel": {
+    "message": "Nach Projekt filtern"
+  },
+  "projectFilterUpcoming": {
+    "message": "Bevorstehend"
+  },
+  "couldNotSwitchProject": {
+    "message": "Projekt konnte nicht gewechselt werden: $1",
+    "placeholders": {
+      "1": {
+        "content": "$1"
+      }
+    }
+  },
   "sortTasksTitle": {
     "message": "Aufgaben sortieren"
   },
@@ -155,6 +172,15 @@
   "overdueLabel": {
     "message": "Überfällig"
   },
+  "priorityHigh": {
+    "message": "Hoch"
+  },
+  "priorityUrgent": {
+    "message": "Dringend"
+  },
+  "priorityDoNow": {
+    "message": "SOFORT"
+  },
   "untitledLabel": {
     "message": "Ohne Titel"
   },
@@ -231,7 +257,7 @@
     "message": "Kein Standardprojekt"
   },
   "hintDefaultProject": {
-    "message": "Aufgaben aus dem Popup und dem Erfassungsfenster werden standardmäßig diesem Projekt hinzugefügt."
+    "message": "Startprojekt für den Popup-Listenfilter und für neue Aufgaben aus dem Popup/Erfassungsfenster. Im Popup kannst du das Projekt wechseln; die Auswahl wird gespeichert."
   },
   "labelDueTodayDefault": {
     "message": "Fälligkeitsdatum standardmäßig auf heute setzen"

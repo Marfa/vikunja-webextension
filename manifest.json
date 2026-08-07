@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Vikunja",
-  "version": "0.4.0",
+  "version": "0.4.2",
   "default_locale": "en",
   "description": "__MSG_extDescription__",
   "icons": {
@@ -20,8 +20,7 @@
     "default_popup": "popup/popup.html"
   },
   "background": {
-    "service_worker": "background/background.js",
-    "scripts": ["lib/i18n.js", "lib/vikunja.js", "background/background.js"]
+    "service_worker": "background/background.js"
   },
   "options_ui": {
     "page": "options/options.html"

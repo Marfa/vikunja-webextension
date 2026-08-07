@@ -95,6 +95,7 @@ const userFixture = [{ id: 7, username: 'alice', name: 'Alice', email: 'alice@ex
 const projects = [
   { id: 1, title: 'Work' },
   { id: 2, title: 'Home' },
+  { id: 3, title: 'Inbox' },
 ];
 const tasksFixture = [
   {
@@ -103,6 +104,7 @@ const tasksFixture = [
     description: 'deploy',
     project_id: 1,
     done: false,
+    priority: 4,
     due_date: '2026-08-03T09:00:00Z',
     labels: [{ title: 'urgent', hex_color: 'e02b2b' }],
   },
@@ -112,6 +114,7 @@ const tasksFixture = [
     description: '',
     project_id: 2,
     done: true,
+    priority: 5,
     due_date: '0001-01-01T00:00:00Z',
     labels: null,
   },
@@ -249,7 +252,11 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   assert(ids['config-prompt'].hidden === true, 'config prompt hidden');
   assert(ids['task-list'].childNodes.length === 2, '2 tasks rendered, got ' + ids['task-list'].childNodes.length);
   assert(calls.listTasks.length === 1 && calls.listTasks[0].filter === 'done = false', 'default filter done=false, got ' + JSON.stringify(calls.listTasks[0]));
-  assert(!calls.listTasks[0].projectId, 'no project filter without defaultProject');
+  assert(calls.listTasks[0].projectId === 3, 'defaults to Inbox project, got ' + JSON.stringify(calls.listTasks[0]));
+  assert(ids['project-bar'].hidden === false, 'project bar visible in list view');
+  assert(ids['project-filter'].childNodes.length === 5, 'filter order Inbox/Today/Upcoming + 2 projects, got ' + ids['project-filter'].childNodes.length);
+  assert(ids['project-filter'].childNodes.map((c) => c._text).join('|') === 'Inbox|Today|Upcoming|Home|Work', 'filter menu order, got ' + ids['project-filter'].childNodes.map((c) => c._text).join('|'));
+  assert(ids['project-filter'].value === '3', 'project filter starts on Inbox');
   assert(!ids['quick-chips'].classList.contains('show'), 'chips hidden while input empty');
   assert(ids['quick-title'].placeholder.includes('+Project'), 'vikunja placeholder hints magic, got ' + JSON.stringify(ids['quick-title'].placeholder));
 
@@ -286,10 +293,16 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   assert(firstTask.className.includes('task'), 'first row is task');
   const checkboxInput = firstTask.childNodes[0].childNodes[0];
   assert(checkboxInput.checked === false, 'first checkbox unchecked');
+  const firstMeta = firstTask.childNodes[1].childNodes[1];
+  const firstPrio = firstMeta.childNodes.find((c) => c.className === 'task-priority');
+  assert(firstPrio && firstPrio.textContent === 'Urgent', 'high priority badge shown for open task, got ' + JSON.stringify(firstPrio && firstPrio.textContent));
   const doneRow = ids['task-list'].childNodes[1];
   assert(doneRow.className.includes('done'), 'completed task row has .done');
   const doneInput = doneRow.childNodes[0].childNodes[0];
   assert(doneInput.checked === true, 'completed checkbox checked');
+  const doneMetaKids = doneRow.childNodes[1].childNodes;
+  const doneHasPrio = doneMetaKids.some((c) => c.childNodes && c.childNodes.some((n) => n.className === 'task-priority'));
+  assert(!doneHasPrio, 'done task hides priority badge even when priority is high');
 
   const change = doneInput.listeners['change'][0];
   const fakeChangeEvent = { target: doneInput };
@@ -305,12 +318,12 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   };
   await getSubmit()({ preventDefault() {} });
   assert(calls.createTask.length === 1 && calls.createTask[0].data.title === 'Water plants', 'createTask called for quick add');
-  assert(calls.createTask[0].projectId === 1, 'no magic project -> first project default');
+  assert(calls.createTask[0].projectId === 3, 'no magic project -> active Inbox list filter');
   const toastLink = ids['toast'].childNodes.find((c) => c.textContent === '103');
   assert(toastLink && toastLink.href === 'https://try.vikunja.io/tasks/103', 'success toast links to the new task, got ' + (toastLink && toastLink.href));
   assert(ids['task-list'].childNodes.length === 3, 'task list re-fetches after add (shows new task), got ' + ids['task-list'].childNodes.length);
   assert(ids['task-list'].childNodes[2].classList.contains('task--new'), 'new task row animated in');
-  assert(storage.get('lastProjectId') === 1, 'lastProjectId persisted');
+  assert(storage.get('lastProjectId') === 3, 'lastProjectId persisted');
 
   // Quick Add Magic: +project, !priority, *label (vikunja mode)
   ids['quick-title'].value = '+Home Water plants !3 *focus';
@@ -439,7 +452,7 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
 
   ids['quick-title'].value = 'Water';
   triggerInput();
-  assert(chipSel(0).value === '1', 'no magic project -> first project default, got ' + chipSel(0).value);
+  assert(chipSel(0).value === '3', 'no magic project -> Inbox list filter default, got ' + chipSel(0).value);
   assert(!chipSel(1).className.includes('chip--priority'), 'priority chip neutral without !');
 
   chipSel(0).value = '2';
@@ -566,6 +579,116 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   await new Promise((r) => { setTimeout(r, 20); });
   const lastFetch5 = calls.listTasks[calls.listTasks.length - 1];
   assert(lastFetch5.sortBy === 'created' && lastFetch5.orderBy === 'desc', 'falls back to created desc without a view, got ' + JSON.stringify(lastFetch5));
+
+  // project filter switcher (Inbox / Today / Upcoming / A-Z)
+  storage.delete('lastListProjectId');
+  VikunjaLib.getPrefs = () => Promise.resolve({ defaultProjectId: null, dueToday: false, customFilter: '', sortBy: 'created', rememberLastSort: false });
+  VikunjaLib.listProjectViews = (projectId) => {
+    calls.listProjectViews.push(projectId);
+    return Promise.resolve([{ id: 10, title: 'List', type: 'list' }]);
+  };
+  ids['quick-title'].value = '';
+  eval(src);
+  await new Promise((r) => { setTimeout(r, 20); });
+  assert(ids['project-filter'].value === '3', 'reset filter shows Inbox');
+  assert(calls.listTasks[calls.listTasks.length - 1].projectId === 3, 'Inbox loads with projectId 3');
+
+  ids['project-filter'].value = '2';
+  const filterChange = ids['project-filter'].listeners['change'];
+  assert(filterChange && filterChange.length, 'project filter has change listener');
+  await filterChange[filterChange.length - 1]();
+  await new Promise((r) => { setTimeout(r, 0); });
+  const switched = calls.listTasks[calls.listTasks.length - 1];
+  assert(switched.projectId === 2, 'switching to Home filters by project 2, got ' + JSON.stringify(switched));
+  assert(storage.get('lastListProjectId') === 2, 'list project choice remembered');
+
+  ids['project-filter'].value = 'today';
+  await filterChange[filterChange.length - 1]();
+  await new Promise((r) => { setTimeout(r, 0); });
+  const todayFetch = calls.listTasks[calls.listTasks.length - 1];
+  assert(storage.get('lastListProjectId') === 'today', 'Today filter remembered');
+  assert(!todayFetch.projectId, 'Today has no projectId');
+  assert(String(todayFetch.filter).includes('due_date < now+1d/d'), 'Today filter uses due_date window, got ' + todayFetch.filter);
+  assert(todayFetch.sortBy === 'created' && todayFetch.orderBy === 'desc', 'Today keeps explicit created sort, got ' + JSON.stringify(todayFetch));
+
+  // manual sort on a smart filter falls back to due_date
+  VikunjaLib.getPrefs = () => Promise.resolve({ defaultProjectId: null, dueToday: false, customFilter: '', sortBy: 'position', rememberLastSort: false });
+  storage.set('lastListProjectId', 'today');
+  ids['quick-title'].value = '';
+  eval(src);
+  await new Promise((r) => { setTimeout(r, 20); });
+  const todayManual = calls.listTasks[calls.listTasks.length - 1];
+  assert(todayManual.sortBy === 'due_date' && todayManual.orderBy === 'asc', 'Today + manual sort falls back to due_date, got ' + JSON.stringify(todayManual));
+
+  ids['project-filter'].value = 'upcoming';
+  const filterChangeUpcoming = ids['project-filter'].listeners['change'];
+  await filterChangeUpcoming[filterChangeUpcoming.length - 1]();
+  await new Promise((r) => { setTimeout(r, 0); });
+  const upcomingFetch = calls.listTasks[calls.listTasks.length - 1];
+  assert(storage.get('lastListProjectId') === 'upcoming', 'Upcoming filter remembered');
+  assert(String(upcomingFetch.filter).includes('due_date >= now/d'), 'Upcoming filter uses due_date >= now/d, got ' + upcomingFetch.filter);
+
+  // Upcoming/Today: within each calendar day, priority desc then created asc.
+  ids['search'].value = '';
+  const smartSortTasks = [
+    { id: 201, title: 'low later', project_id: 1, done: false, priority: 1, due_date: '2026-08-07T15:00:00Z', created: '2026-08-06T12:00:00Z' },
+    { id: 202, title: 'high early', project_id: 1, done: false, priority: 4, due_date: '2026-08-07T12:00:00Z', created: '2026-08-05T12:00:00Z' },
+    { id: 203, title: 'high newer', project_id: 1, done: false, priority: 4, due_date: '2026-08-07T14:00:00Z', created: '2026-08-06T18:00:00Z' },
+    { id: 204, title: 'medium next day', project_id: 1, done: false, priority: 3, due_date: '2026-08-08T12:00:00Z', created: '2026-08-01T12:00:00Z' },
+    { id: 205, title: 'no prio same day', project_id: 1, done: false, priority: 0, due_date: '2026-08-07T13:00:00Z', created: '2026-08-07T01:00:00Z' },
+  ];
+  VikunjaLib.getPrefs = () => Promise.resolve({ defaultProjectId: null, dueToday: false, customFilter: '', sortBy: 'created', rememberLastSort: false });
+  VikunjaLib.listTasks = (opts) => {
+    calls.listTasks.push(opts);
+    return Promise.resolve(JSON.parse(JSON.stringify(smartSortTasks)));
+  };
+  // Drop stacked listeners from earlier eval(src) runs so an old load() cannot
+  // overwrite the list after this re-init.
+  ['project-filter', 'search', 'sort-btn', 'quick-title', 'quick-add', 'add-site', 'logo', 'grant-access'].forEach((id) => {
+    if (ids[id]) ids[id].listeners = {};
+  });
+  storage.set('lastListProjectId', 'today');
+  ids['quick-title'].value = '';
+  eval(src);
+  await new Promise((r) => { setTimeout(r, 20); });
+  const todayOrder = ids['task-list'].childNodes.map((c) => Number(c.getAttribute('data-task-id')));
+  assert(
+    JSON.stringify(todayOrder) === JSON.stringify([202, 203, 201, 205, 204]),
+    'Today sorts day → priority desc → created asc, got ' + JSON.stringify(todayOrder),
+  );
+  const prioOf = (taskId) => {
+    const row = ids['task-list'].childNodes.find((c) => String(c.getAttribute('data-task-id')) === String(taskId));
+    const body = row && row.childNodes[1];
+    const meta = body && body.childNodes.find((c) => c.className === 'task-meta');
+    const badge = meta && meta.childNodes.find((c) => c.className === 'task-priority');
+    return badge ? badge.textContent : null;
+  };
+  assert(prioOf(202) === 'Urgent', 'priority 4 shows Urgent, got ' + JSON.stringify(prioOf(202)));
+  assert(prioOf(204) === 'High', 'priority 3 shows High, got ' + JSON.stringify(prioOf(204)));
+  assert(prioOf(201) === null, 'priority 1 (low) has no badge');
+  assert(prioOf(205) === null, 'priority 0 has no badge');
+
+  ids['project-filter'].value = 'upcoming';
+  const filterChangeSmart = ids['project-filter'].listeners['change'];
+  await filterChangeSmart[filterChangeSmart.length - 1]();
+  await new Promise((r) => { setTimeout(r, 0); });
+  const upcomingOrder = ids['task-list'].childNodes.map((c) => Number(c.getAttribute('data-task-id')));
+  assert(
+    JSON.stringify(upcomingOrder) === JSON.stringify([202, 203, 201, 205, 204]),
+    'Upcoming uses the same within-day sort, got ' + JSON.stringify(upcomingOrder),
+  );
+
+  // remembered list filter overrides the options default project
+  ['project-filter', 'search', 'sort-btn', 'quick-title', 'quick-add', 'add-site', 'logo', 'grant-access'].forEach((id) => {
+    if (ids[id]) ids[id].listeners = {};
+  });
+  storage.set('lastListProjectId', 1);
+  VikunjaLib.getPrefs = () => Promise.resolve({ defaultProjectId: 2, dueToday: false, customFilter: '', sortBy: 'created', rememberLastSort: false });
+  ids['quick-title'].value = '';
+  eval(src);
+  await new Promise((r) => { setTimeout(r, 20); });
+  assert(calls.listTasks[calls.listTasks.length - 1].projectId === 1, 'remembered list project beats defaultProjectId');
+  assert(ids['project-filter'].value === '1', 'select shows remembered project');
 
   if (errors.length) {
     console.log('FAIL');

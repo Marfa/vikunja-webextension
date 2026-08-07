@@ -44,7 +44,7 @@ browser.
 
 ## Language
 
-The extension ships in **English**, **German** and **Spanish**. The language is chosen from
+The extension ships in **English**, **German**, **Spanish** and **Russian**. The language is chosen from
 your browser's UI language (English is the fallback), so no in-extension setting
 is needed. The Quick Add Magic syntax stays English by design: its project,
 label, priority, date and repeat tokens (`+`, `*`, `!`, `@`, `tomorrow`,
@@ -110,8 +110,28 @@ parses task text identically to the web app.
 Then open the options page, enter your Vikunja URL and an API token with the
 permissions listed on the page, and you are ready to go.
 
-## Packaging as an `.xpi`
+## Packaging
+
+Chrome (zip for GitHub Releases / `chrome://extensions` → *Load unpacked* after unzip):
 
 ```sh
-zip -r vikunja.xpi manifest.json background capture content icons lib options popup capture styles _locales -x 'icons/icon.svg'
+npm run pack:chrome
 ```
+
+Writes `dist/vikunja-chrome-<version>.zip` with `manifest.json` at the archive root.
+Publishing a GitHub Release runs [`.github/workflows/release.yml`](.github/workflows/release.yml), which packs that zip and attaches it to the release.
+
+Firefox (`.xpi`):
+
+```sh
+zip -r vikunja.xpi manifest.json background capture content icons lib options popup styles _locales -x 'icons/icon.svg'
+```
+
+## Support
+
+Код подготовлен с помощью [Cursor](https://cursor.com).
+
+| | |
+| --- | --- |
+| Донат | https://www.donationalerts.com/r/themarfa |
+| Крипта | https://nowpayments.io/donation/themarfa |

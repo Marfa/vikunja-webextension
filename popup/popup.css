@@ -18,6 +18,41 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
+.project-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+  background: #fafbfc;
+}
+
+.project-filter-label {
+  flex: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+#project-filter {
+  flex: 1;
+  min-width: 0;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+#project-filter:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: var(--focus-ring);
+}
+
 #logo {
   flex: none;
   cursor: pointer;
@@ -447,6 +482,11 @@ body {
 
 .task-due.today {
   color: var(--ok);
+  font-weight: 600;
+}
+
+.task-priority {
+  color: var(--err);
   font-weight: 600;
 }
 
