@@ -62,7 +62,7 @@ global.chrome = {
   },
   contextMenus: {
     removeAll: (cb) => cb && cb(),
-    create: () => {},
+    create: (_opts, cb) => { calls.menuCreate = (calls.menuCreate || 0) + 1; cb && cb(); },
     onClicked: { addListener: (fn) => listeners.onClicked.push(fn) },
   },
   commands: { onCommand: { addListener: (fn) => listeners.onCommand.push(fn) } },

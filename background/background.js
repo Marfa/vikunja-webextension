@@ -30,17 +30,26 @@
     await openCapture(content);
   }
 
+  // onInstalled + onStartup can both fire (e.g. load/reload unpacked). Parallel
+  // removeAll→create races leave the second create with a live duplicate id.
+  let menusChain = Promise.resolve();
   function createMenus() {
     if (!api.contextMenus) {
       return;
     }
-    api.contextMenus.removeAll(() => {
-      api.contextMenus.create({
-        id: MENU_ID,
-        title: t('contextMenuAddToVikunja', 'Add to Vikunja…'),
-        contexts: ['page', 'selection', 'link'],
+    menusChain = menusChain.then(() => new Promise((resolve) => {
+      api.contextMenus.removeAll(() => {
+        void api.runtime.lastError;
+        api.contextMenus.create({
+          id: MENU_ID,
+          title: t('contextMenuAddToVikunja', 'Add to Vikunja…'),
+          contexts: ['page', 'selection', 'link'],
+        }, () => {
+          void api.runtime.lastError;
+          resolve();
+        });
       });
-    });
+    })).catch(() => {});
   }
 
   // Dynamically registered content scripts only run on pages loaded after the
