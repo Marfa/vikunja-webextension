@@ -665,6 +665,29 @@
     return projectViews;
   }
 
+  // Match Vikunja Upcoming/Today: calendar day asc, then priority desc, then
+  // created asc. Done client-side so same-day tasks with different due times
+  // still group by day (API due_date sort is datetime, not day).
+  function dueDayTime(dateStr) {
+    if (!hasDueDate(dateStr)) return Number.POSITIVE_INFINITY;
+    const due = new Date(dateStr);
+    due.setHours(0, 0, 0, 0);
+    return due.getTime();
+  }
+
+  function sortSmartListTasks(list) {
+    return list.slice().sort((a, b) => {
+      const dayDiff = dueDayTime(a.due_date) - dueDayTime(b.due_date);
+      if (dayDiff !== 0) return dayDiff;
+      const pDiff = (Number(b.priority) || 0) - (Number(a.priority) || 0);
+      if (pDiff !== 0) return pDiff;
+      const cA = a.created ? new Date(a.created).getTime() : 0;
+      const cB = b.created ? new Date(b.created).getTime() : 0;
+      if (cA !== cB) return cA - cB;
+      return (Number(a.id) || 0) - (Number(b.id) || 0);
+    });
+  }
+
   async function loadTasks() {
     const base = prefs.customFilter || 'done = false';
     const opts = {};
@@ -691,7 +714,11 @@
         opts.orderBy = 'desc';
       }
     }
-    return listTasks(opts);
+    const items = await listTasks(opts);
+    if (listFilter === FILTER_TODAY || listFilter === FILTER_UPCOMING) {
+      return sortSmartListTasks(items);
+    }
+    return items;
   }
 
   async function refreshTasks() {
