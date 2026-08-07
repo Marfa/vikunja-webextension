@@ -498,6 +498,15 @@
     return due.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   }
 
+  // Matches Vikunja PriorityLabel for HIGH+: only High / Urgent / DO NOW.
+  function formatHighPriority(priority) {
+    const p = Number(priority) || 0;
+    if (p === 3) return t('priorityHigh', 'High');
+    if (p === 4) return t('priorityUrgent', 'Urgent');
+    if (p >= 5) return t('priorityDoNow', 'DO NOW');
+    return null;
+  }
+
   // Vikunja-style checkbox: a visually hidden input + a drawn rounded-square
   // SVG (mirrors the frontend's FancyCheckbox/checkbox.svg).
   function makeCheckbox(task, onChange) {
@@ -597,6 +606,15 @@
           dueEl.textContent = due;
         }
         meta.appendChild(dueEl);
+      }
+
+      const priorityLabel = !task.done ? formatHighPriority(task.priority) : null;
+      if (priorityLabel) {
+        const prioEl = document.createElement('span');
+        prioEl.className = 'task-priority';
+        prioEl.textContent = priorityLabel;
+        prioEl.title = priorityLabel;
+        meta.appendChild(prioEl);
       }
 
       (Array.isArray(task.labels) ? task.labels : []).forEach((label) => {

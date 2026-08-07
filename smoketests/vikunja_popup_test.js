@@ -104,6 +104,7 @@ const tasksFixture = [
     description: 'deploy',
     project_id: 1,
     done: false,
+    priority: 4,
     due_date: '2026-08-03T09:00:00Z',
     labels: [{ title: 'urgent', hex_color: 'e02b2b' }],
   },
@@ -113,6 +114,7 @@ const tasksFixture = [
     description: '',
     project_id: 2,
     done: true,
+    priority: 5,
     due_date: '0001-01-01T00:00:00Z',
     labels: null,
   },
@@ -291,10 +293,16 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
   assert(firstTask.className.includes('task'), 'first row is task');
   const checkboxInput = firstTask.childNodes[0].childNodes[0];
   assert(checkboxInput.checked === false, 'first checkbox unchecked');
+  const firstMeta = firstTask.childNodes[1].childNodes[1];
+  const firstPrio = firstMeta.childNodes.find((c) => c.className === 'task-priority');
+  assert(firstPrio && firstPrio.textContent === 'Urgent', 'high priority badge shown for open task, got ' + JSON.stringify(firstPrio && firstPrio.textContent));
   const doneRow = ids['task-list'].childNodes[1];
   assert(doneRow.className.includes('done'), 'completed task row has .done');
   const doneInput = doneRow.childNodes[0].childNodes[0];
   assert(doneInput.checked === true, 'completed checkbox checked');
+  const doneMetaKids = doneRow.childNodes[1].childNodes;
+  const doneHasPrio = doneMetaKids.some((c) => c.childNodes && c.childNodes.some((n) => n.className === 'task-priority'));
+  assert(!doneHasPrio, 'done task hides priority badge even when priority is high');
 
   const change = doneInput.listeners['change'][0];
   const fakeChangeEvent = { target: doneInput };
@@ -648,6 +656,17 @@ const assert = (cond, msg) => { if (!cond) errors.push(msg); };
     JSON.stringify(todayOrder) === JSON.stringify([202, 203, 201, 205, 204]),
     'Today sorts day → priority desc → created asc, got ' + JSON.stringify(todayOrder),
   );
+  const prioOf = (taskId) => {
+    const row = ids['task-list'].childNodes.find((c) => String(c.getAttribute('data-task-id')) === String(taskId));
+    const body = row && row.childNodes[1];
+    const meta = body && body.childNodes.find((c) => c.className === 'task-meta');
+    const badge = meta && meta.childNodes.find((c) => c.className === 'task-priority');
+    return badge ? badge.textContent : null;
+  };
+  assert(prioOf(202) === 'Urgent', 'priority 4 shows Urgent, got ' + JSON.stringify(prioOf(202)));
+  assert(prioOf(204) === 'High', 'priority 3 shows High, got ' + JSON.stringify(prioOf(204)));
+  assert(prioOf(201) === null, 'priority 1 (low) has no badge');
+  assert(prioOf(205) === null, 'priority 0 has no badge');
 
   ids['project-filter'].value = 'upcoming';
   const filterChangeSmart = ids['project-filter'].listeners['change'];

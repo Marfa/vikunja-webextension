@@ -485,6 +485,11 @@ body {
   font-weight: 600;
 }
 
+.task-priority {
+  color: var(--err);
+  font-weight: 600;
+}
+
 .task-tag {
   padding: 0.05rem 0.45rem;
   border-radius: 999px;

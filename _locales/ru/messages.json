@@ -172,6 +172,15 @@
   "overdueLabel": {
     "message": "Просрочено"
   },
+  "priorityHigh": {
+    "message": "Высокий"
+  },
+  "priorityUrgent": {
+    "message": "Срочный"
+  },
+  "priorityDoNow": {
+    "message": "СДЕЛАТЬ СЕЙЧАС"
+  },
   "untitledLabel": {
     "message": "Без названия"
   },

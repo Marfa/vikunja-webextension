@@ -172,6 +172,15 @@
   "overdueLabel": {
     "message": "Overdue"
   },
+  "priorityHigh": {
+    "message": "High"
+  },
+  "priorityUrgent": {
+    "message": "Urgent"
+  },
+  "priorityDoNow": {
+    "message": "DO NOW"
+  },
   "untitledLabel": {
     "message": "Untitled"
   },
